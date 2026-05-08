@@ -1,0 +1,192 @@
+{
+  "Apple___Apple_scab": {
+    "symptoms": "The first symptoms are small, olive-green spots on leaves. As they age, these spots become dark brown to black and feel velvety. Severely infected leaves may turn yellow and drop off by mid-summer. On fruit, the spots are brown, corky, and 'scabby' in appearance, and can cause the fruit to crack or become deformed.",
+    "treatment": "1. Remove fallen leaves and infected fruits.\n2. Prune branches for airflow.\n3. Apply copper, chlorothalonil, or mancozeb fungicides at spring bud-break.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Apple___Black_rot": {
+    "symptoms": "Dark, circular lesions on leaves with purple margins. Fruit shows black, rotten spots that expand and form concentric rings. Branch cankers may develop.",
+    "treatment": "1. Remove and destroy infected leaves and mummified fruits.\n2. Prune cankered branches.\n3. Apply copper-based fungicides early in season.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Apple___Cedar_apple_rust": {
+    "symptoms": "Bright yellow-orange leaf spots. Underside develops tube-like orange spore horns. Fruit may deform.",
+    "treatment": "1. Remove nearby cedar trees if possible.\n2. Apply sulfur or copper fungicides at pink-bud stage.\n3. Maintain airflow by pruning.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Apple___healthy": {
+    "symptoms": "Leaves are a uniform green color. No visible spots, discoloration, or deformities. Plant appears vigorous.",
+    "treatment": "No treatment needed. Continue good watering, fertilization, and pruning practices.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Blueberry___healthy": {
+    "symptoms": "Leaves are glossy green and firm, stems strong, berries healthy.",
+    "treatment": "No treatment needed. Maintain regular mulching and watering.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Cherry_(including_sour)___Powdery_mildew": {
+    "symptoms": "White, powdery fungal growth on upper leaf surfaces. Leaves curl and distort. Can affect fruit.",
+    "treatment": "1. Increase air circulation by pruning.\n2. Apply sulfur or potassium bicarbonate sprays.\n3. Avoid overhead watering.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Cherry_(including_sour)___healthy": {
+    "symptoms": "Leaves are smooth and green, fruit firm and disease-free.",
+    "treatment": "No treatment needed. Maintain proper watering and pruning.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": {
+    "symptoms": "Long, narrow rectangular lesions that are tan to gray in color. Lesions may merge and kill leaf tissue.",
+    "treatment": "1. Rotate crops and avoid corn-on-corn planting.\n2. Use resistant hybrids.\n3. Apply strobilurin or triazole fungicides if early infection.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Corn_(maize)___Common_rust_": {
+    "symptoms": "Brick-red oval pustules on both leaf surfaces; may turn brown to black later.",
+    "treatment": "1. Plant resistant hybrids.\n2. Remove alternate hosts.\n3. Spray mancozeb or chlorothalonil if severe.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Corn_(maize)___Northern_Leaf_Blight": {
+    "symptoms": "Long grayish-green elliptical lesions on leaves, turning tan with dark borders.",
+    "treatment": "1. Grow resistant hybrids.\n2. Rotate crops and remove debris.\n3. Fungicide: Propiconazole or strobilurin at early signs.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Corn_(maize)___healthy": {
+    "symptoms": "Uniform green leaves with no spots; strong stem growth.",
+    "treatment": "No treatment required.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Grape___Black_rot": {
+    "symptoms": "Brown leaf spots with black edges. Berries develop black, shriveled mummies.",
+    "treatment": "1. Remove infected mummies and leaves.\n2. Apply sulfur or mancozeb fungicides.\n3. Prune for airflow.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "symptoms": "Dark streaks inside wood, berries show black spotting and cracking. Leaves show scorched margins.",
+    "treatment": "1. Remove infected wood.\n2. Improve soil drainage.\n3. Use fungicides only preventively; severe vines may need removal.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+    "symptoms": "Angular dark-brown leaf spots that merge and cause leaf drop.",
+    "treatment": "1. Remove diseased leaves.\n2. Apply copper fungicides.\n3. Maintain vineyard airflow.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Grape___healthy": {
+    "symptoms": "No visible spots, mold, or discoloration; normal growth.",
+    "treatment": "Routine pruning, drip irrigation, balanced fertilizer.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Orange___Haunglongbing_(Citrus_greening)": {
+    "symptoms": "Blotchy yellow leaf mottling, small bitter fruits, premature fruit drop, twig dieback.",
+    "treatment": "1. Remove infected trees (no cure).\n2. Control psyllid insect carrier.\n3. Apply micronutrient foliar supplements to slow decline.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Peach___Bacterial_spot": {
+    "symptoms": "Small purple-brown leaf spots, fruit pitting and cracking, twig cankers.",
+    "treatment": "1. Use resistant varieties.\n2. Apply copper bactericide in early season.\n3. Remove infected twigs.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Peach___healthy": {
+    "symptoms": "Smooth green leaves, clean fruit, no lesions.",
+    "treatment": "Maintain orchard hygiene and proper irrigation.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Pepper,_bell___Bacterial_spot": {
+    "symptoms": "Water-soaked leaf spots turning brown; fruit shows raised scabby spots.",
+    "treatment": "1. Remove infected leaves.\n2. Apply copper sprays.\n3. Avoid overhead irrigation.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Pepper,_bell___healthy": {
+    "symptoms": "Glossy green leaves, firm fruits, no spots.",
+    "treatment": "No treatment needed.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Potato___Early_blight": {
+    "symptoms": "Brown leaf spots with concentric rings; lower leaves yellow and drop.",
+    "treatment": "1. Remove plant debris.\n2. Use chlorothalonil or mancozeb fungicides.\n3. Rotate crops.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Potato___Late_blight": {
+    "symptoms": "Water-soaked leaf spots turning brown-purple; white mold underside.",
+    "treatment": "1. Preventive fungicides (mancozeb, zineb).\n2. Destroy infected tubers.\n3. Harvest after vines die completely.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Potato___healthy": {
+    "symptoms": "Green vigorous leaves; no dark spots or wilting.",
+    "treatment": "Maintain soil drainage and crop rotation.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Raspberry___healthy": {
+    "symptoms": "Healthy green leaves, firm canes, normal fruit.",
+    "treatment": "No treatment needed.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Soybean___healthy": {
+    "symptoms": "Uniform leaf color and structure; healthy pods.",
+    "treatment": "No treatment required.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Squash___Powdery_mildew": {
+    "symptoms": "White powder on leaves; leaves yellow and dry early.",
+    "treatment": "1. Spray sulfur or neem oil.\n2. Ensure airflow; avoid overhead watering.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Strawberry___Leaf_scorch": {
+    "symptoms": "Small purple leaf spots turning brown; leaf edges dry and curl.",
+    "treatment": "1. Remove infected leaves.\n2. Improve spacing/airflow.\n3. Apply copper fungicide if severe.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Strawberry___healthy": {
+    "symptoms": "Green leaves and healthy red berries; no spotting.",
+    "treatment": "Maintain mulching and proper irrigation.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Bacterial_spot": {
+    "symptoms": "Dark water-soaked leaf spots; fruits get raised brown scabs.",
+    "treatment": "1. Copper sprays weekly.\n2. Remove infected leaves.\n3. Avoid overhead watering.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Early_blight": {
+    "symptoms": "Brown spots with concentric rings; yellowing lower leaves.",
+    "treatment": "1. Remove lower leaves.\n2. Use chlorothalonil or mancozeb sprays.\n3. Mulch soil to prevent splash infection.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Late_blight": {
+    "symptoms": "Dark greasy spots; white mold beneath leaves.",
+    "treatment": "1. Immediate fungicide: chlorothalonil or copper.\n2. Destroy infected plants.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Leaf_Mold": {
+    "symptoms": "Yellow upper leaf spots; olive-green underside mold.",
+    "treatment": "1. Reduce humidity.\n2. Remove lower leaves.\n3. Copper fungicide.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Septoria_leaf_spot": {
+    "symptoms": "Tiny circular spots with dark border and gray center; defoliation common.",
+    "treatment": "1. Remove infected leaves.\n2. Spray copper or chlorothalonil.\n3. Mulch to prevent soil splash.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Spider_mites Two-spotted_spider_mite": {
+    "symptoms": "Tiny yellow speckling on leaves; fine webbing under leaves; leaves dry and drop.",
+    "treatment": "1. Spray neem oil or insecticidal soap.\n2. Increase humidity slightly.\n3. Hose off mites underside of leaves.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Target_Spot": {
+    "symptoms": "Brown spots with concentric rings, leaf yellowing and dropping.",
+    "treatment": "1. Remove infected leaves.\n2. Apply copper or mancozeb sprays.\n3. Ensure airflow.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Tomato_Yellow_Leaf_Curl_Virus": {
+    "symptoms": "Yellow curled leaves, stunted growth, reduced fruit, whiteflies present.",
+    "treatment": "1. Remove infected plants.\n2. Control whiteflies (sticky traps, neem).\n3. Plant resistant varieties.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___Tomato_mosaic_virus": {
+    "symptoms": "Mosaic yellow-green pattern on leaves; distorted foliage; reduced fruit.",
+    "treatment": "1. Remove infected plants.\n2. Sanitize tools.\n3. Use virus-free seeds and resistant varieties.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  },
+  "Tomato___healthy": {
+    "symptoms": "Dark green leaves, strong stems, regular fruiting.",
+    "treatment": "Normal watering, pruning, fertilization.",
+    "prevention": "General prevention: Maintain field hygiene, ensure proper spacing for good airflow, avoid overhead irrigation, rotate crops annually, and use resistant varieties when possible."
+  }
+}

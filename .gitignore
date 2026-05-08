@@ -1,0 +1,44 @@
+# Environment variables
+.env
+*.env
+
+# Dataset (large training data - not needed for deployment)
+Dataset/
+
+# Jupyter Notebooks (not needed for deployment)
+*.ipynb
+.ipynb_checkpoints/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Test directories (optional, keep if needed)
+# test/
+
+# Temporary files
+*.tmp
+*.temp

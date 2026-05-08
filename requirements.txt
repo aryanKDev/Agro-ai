@@ -1,0 +1,10 @@
+numpy
+tensorflow
+keras
+Pillow
+Flask
+Flask-CORS
+requests
+python-dotenv
+google-generativeai
+gunicorn
