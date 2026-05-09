@@ -2,7 +2,7 @@
 Plant Disease Detection System - Production-Ready Flask Backend
 ================================================================
 Author notes:
-  - Uses google-genai (new official SDK) with gemini-1.5-flash
+  - Uses google-generativeai SDK (pip install google-generativeai) with gemini-1.5-flash
   - disease_info.json is queried FIRST for factual questions (no API call)
   - Gemini is called only for open-ended / conversational queries
   - 1 retry after 5 s on quota / server errors
@@ -25,10 +25,9 @@ from dotenv import load_dotenv
 import requests
 
 # ---------------------------------------------------------------------------
-# New official Gemini SDK  (pip install google-genai)
+# Google Generative AI SDK  (pip install google-generativeai)
 # ---------------------------------------------------------------------------
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 
 # ---------------------------------------------------------------------------
 # Logging – visible in terminal during demo / viva
@@ -41,7 +40,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Load .env and configure Gemini client
+# Load .env and configure Gemini
 # ---------------------------------------------------------------------------
 load_dotenv()  # reads GOOGLE_API_KEY from the .env file in the project root
 
@@ -49,16 +48,17 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY not set in .env – chatbot will run in offline mode only.")
 
-# Stable free-tier model for the new google-genai SDK.
-# gemini-2.0-flash-lite has the highest free quota (generous RPM/RPD limits).
+# Stable free-tier model for the google-generativeai SDK.
+# gemini-1.5-flash has a generous free quota.
 # The local-DB-first strategy in the chat route minimises API calls further.
 GEMINI_MODEL = "gemini-1.5-flash"
 
-
-# Create client once at startup (safe if key is None – handled in chat route)
-gemini_client = genai.Client(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
-if gemini_client:
-    logger.info(f"Gemini client ready | model: {GEMINI_MODEL}")
+# Configure the SDK once at startup (safe if key is None – handled in chat route)
+if GOOGLE_API_KEY:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    logger.info(f"Gemini SDK configured | model: {GEMINI_MODEL}")
+else:
+    logger.warning("Gemini SDK not configured (no API key).")
 
 # ---------------------------------------------------------------------------
 # Flask app
@@ -92,7 +92,7 @@ except Exception as e:
 # Class names order must match what the model was trained on
 CLASS_NAMES = list(disease_info_db.keys())
 
-# In-memory conversational session store  { session_id -> list[Content] }
+# In-memory conversational session store  { session_id -> list[dict] }
 chat_sessions: dict = {}
 
 # ===========================================================================
@@ -199,28 +199,28 @@ def call_gemini_with_retry(
 ) -> tuple[str, list]:
     """
     Send a message to Gemini 1.5 Flash with chat history.
+    Uses google-generativeai SDK (genai.GenerativeModel).
     Retries once (after retry_delay seconds) on quota / server errors.
     Returns (reply_text, updated_history_list) or raises on failure.
     """
-    if not gemini_client:
-        raise RuntimeError("Gemini client not initialised (no API key).")
+    if not GOOGLE_API_KEY:
+        raise RuntimeError("Gemini SDK not configured (no API key).")
 
+    # Build the model with a system instruction
+    model_instance = genai.GenerativeModel(
+        model_name=GEMINI_MODEL,
+        system_instruction=system_instruction,
+        generation_config=genai.types.GenerationConfig(
+            max_output_tokens=1024,
+            temperature=0.7,
+        ),
+    )
+
+    # history is a list of dicts: [{"role": "user"|"model", "parts": [str]}, ...]
     last_error = None
     for attempt in range(max_retries + 1):
         try:
-            # Reconstruct the chat with full history on each call
-            # (google-genai SDK creates stateless chats via Client)
-            chat = gemini_client.chats.create(
-                model=GEMINI_MODEL,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    # Keep responses focused and fast
-                    max_output_tokens=1024,
-                    temperature=0.7,
-                ),
-                history=history  # list of Content objects from previous turns
-            )
-
+            chat = model_instance.start_chat(history=history)
             response = chat.send_message(user_message)
 
             # Guard: empty / blocked response
@@ -228,7 +228,12 @@ def call_gemini_with_retry(
             if not reply:
                 raise ValueError("Gemini returned an empty response.")
 
-            return reply, list(chat.get_history())
+            # Serialize updated history to plain dicts for JSON-safe storage
+            updated_history = [
+                {"role": m.role, "parts": [p.text for p in m.parts]}
+                for m in chat.history
+            ]
+            return reply, updated_history
 
         except Exception as exc:
             last_error = exc
@@ -385,11 +390,11 @@ def chat():
         "Do NOT repeat the context verbatim."
     )
 
-    # Retrieve or initialise session history (list of Content objects)
+    # Retrieve or initialise session history (list of dicts)
     if session_id not in chat_sessions:
         chat_sessions[session_id] = []
 
-    history = chat_sessions[session_id]  # list[types.Content] or list[dict]
+    history = chat_sessions[session_id]  # list[dict] with role + parts keys
 
     try:
         reply_text, updated_history = call_gemini_with_retry(
@@ -398,11 +403,8 @@ def chat():
             user_message=user_message,
         )
 
-        # Persist history as plain dicts (JSON-serialisable) for future calls
-        chat_sessions[session_id] = [
-            {"role": m.role, "parts": [p.text for p in m.parts]}
-            for m in updated_history
-        ]
+        # Persist history (already plain dicts from call_gemini_with_retry)
+        chat_sessions[session_id] = updated_history
 
         logger.info(f"[{session_id}] Gemini responded OK.")
         return jsonify({"response": reply_text})
