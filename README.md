@@ -1,9 +1,246 @@
-Plant diseases significantly impact global food security and agricultural sustainability. Traditional methods of disease detection often rely on visual inspection by experts, which is time-consuming, subjective, and infeasible for large-scale operations. In regions where access to agricultural experts is limited, farmers often resort to guesswork or generalized treatments, leading to inefficient resource use and exacerbation of the problem. The economic loss due to undetected or misdiagnosed plant diseases is staggering, affecting not only individual farmers but also national economies reliant on agriculture. Moreover, the lack of early detection mechanisms contributes to the widespread use of chemical treatments, which not only increase production costs but also pose environmental hazards. In this context, developing an automated, efficient, and accessible system to identify plant diseases accurately is crucial. By bridging the gap between technological advancements and agricultural needs, this project aims to transform how farmers address plant health challenges and promote sustainable agricultural practices.
+# 🌱 Agro AI — Plant Disease Detection System
 
-This project primarily targets small and medium-scale farmers and agricultural consultants, offering a scalable and adaptable solution to address plant disease challenges. The current implementation focuses on a predefined set of plant diseases, leveraging an extensive dataset curated for this purpose. However, the framework’s modular design ensures that it can be extended to include additional plant varieties, diseases, and geographical considerations. Beyond disease identification, the system has the potential to incorporate predictive analytics, integrating environmental factors such as weather patterns and soil health data to provide holistic crop management solutions. Furthermore, the project explores opportunities for multilingual support and mobile platform integration, broadening its accessibility to diverse user groups. The envisioned scope also includes collaboration with agricultural research institutions to continuously update the system’s knowledge base, ensuring its relevance in dynamic agricultural environments. By addressing both immediate and long-term challenges, this project aspires to be a transformative tool in the global effort toward sustainable agriculture.
+An AI-powered Plant Disease Detection web application that helps users identify plant diseases from leaf images and get treatment, prevention, and farming guidance using Machine Learning and Gemini AI.
 
-![image](https://github.com/user-attachments/assets/188297f1-2ef6-4720-b53e-565db94055e6)
+---
 
-![image](https://github.com/user-attachments/assets/b16bf3f8-b5ce-4974-8c20-114b91db9cf6)
-![image](https://github.com/user-attachments/assets/0610512b-098c-4869-8230-4159c2251cb2)
-![image](https://github.com/user-attachments/assets/aa011fd3-b373-4cba-8f29-832a6dc7eae6)
+# 🚀 Live Demo
+
+🔗 Live App: [https://aryan-29-agro-ai.hf.space](https://aryan-29-agro-ai.hf.space)
+
+🔗 GitHub Repository: [https://github.com/aryanKDev/Agro-ai](https://github.com/aryanKDev/Agro-ai)
+
+---
+
+# 📌 Features
+
+✅ AI-based Plant Disease Detection
+
+✅ Upload plant leaf images for prediction
+
+✅ Supports multiple plant diseases
+
+✅ Treatment and prevention suggestions
+
+✅ Gemini AI-powered chatbot assistant
+
+✅ Modern responsive frontend UI
+
+✅ Flask backend API
+
+✅ TensorFlow/Keras deep learning model
+
+✅ Hugging Face deployment
+
+---
+
+# 🧠 Tech Stack
+
+## Frontend
+
+* HTML5
+* CSS3
+* JavaScript
+
+## Backend
+
+* Python
+* Flask
+* Flask-CORS
+
+## Machine Learning
+
+* TensorFlow
+* Keras
+* NumPy
+* Pillow
+
+## AI Chatbot
+
+* Google Gemini API
+
+## Deployment
+
+* Hugging Face Spaces
+
+---
+
+# 📂 Project Structure
+
+```bash
+Agro-ai/
+│
+├── app.py
+├── requirements.txt
+├── runtime.txt
+├── Dockerfile
+├── index.html
+├── style.css
+├── script.js
+├── disease_info.json
+├── trained_plant_disease_model.keras
+├── README.md
+├── settings.json
+├── Diseases.png
+├── training_hist.json
+└── test/
+```
+
+---
+
+# ⚙️ Installation & Setup
+
+## 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/aryanKDev/Agro-ai.git
+```
+
+## 2️⃣ Open Project Folder
+
+```bash
+cd Agro-ai
+```
+
+## 3️⃣ Create Virtual Environment (Optional but Recommended)
+
+```bash
+python -m venv venv
+```
+
+### Activate Virtual Environment
+
+#### Windows
+
+```bash
+venv\Scripts\activate
+```
+
+#### Linux/Mac
+
+```bash
+source venv/bin/activate
+```
+
+---
+
+# 📦 Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+# 🔑 Environment Variables
+
+Create a `.env` file in the root directory and add:
+
+```env
+GOOGLE_API_KEY=your_gemini_api_key
+```
+
+---
+
+# ▶️ Run the Application
+
+```bash
+python app.py
+```
+
+The app will start on:
+
+```bash
+http://127.0.0.1:5000
+```
+
+---
+
+# 🖼️ How to Use
+
+1. Upload a plant leaf image
+2. Click on “Analyze Image”
+3. View disease prediction results
+4. Read symptoms, treatment, and prevention
+5. Chat with the AI farming assistant
+
+---
+
+# 🤖 AI Chatbot
+
+The chatbot supports:
+
+* Disease symptoms
+* Treatment guidance
+* Prevention methods
+* Farming advice
+* Crop health information
+
+Powered by Google Gemini AI.
+
+---
+
+# 📊 Model Information
+
+* Framework: TensorFlow / Keras
+* File: `trained_plant_disease_model.keras`
+* Trained on plant disease image datasets
+* Supports multiple crop disease classes
+
+---
+
+# 🌍 Deployment
+
+This project is deployed on Hugging Face Spaces using Docker.
+
+---
+
+# 🔒 Important Notes
+
+* Do not upload your `.env` file publicly.
+* Keep your Gemini API key secure.
+* Dataset files are excluded from GitHub to keep the repository lightweight.
+
+---
+
+# 📸 Screenshots
+
+You can add screenshots here later.
+
+---
+
+# 👨‍💻 Author
+
+### Aryan Kushwaha
+
+B.Tech AIML Student | Full Stack Developer | AI Enthusiast
+
+GitHub: [https://github.com/aryanKDev](https://github.com/aryanKDev)
+
+---
+
+# ⭐ Future Improvements
+
+* Better disease accuracy
+* Mobile application
+* Multi-language support
+* User authentication
+* Disease history tracking
+* Faster model optimization
+* More crop support
+
+---
+
+# 📜 License
+
+This project is created for educational and learning purposes.
+
+---
+
+# 🙌 Acknowledgements
+
+* TensorFlow
+* Flask
+* Hugging Face
+* Google Gemini AI
+* Open Source Community
