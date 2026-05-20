@@ -1,246 +1,217 @@
-# 🌱 Agro AI — Plant Disease Detection System
+🌾 AgroAI – AI Powered Smart Crop Health Monitoring System
+<div align="center">
 
-An AI-powered Plant Disease Detection web application that helps users identify plant diseases from leaf images and get treatment, prevention, and farming guidance using Machine Learning and Gemini AI.
 
----
 
-# 🚀 Live Demo
 
-🔗 Live App: [https://aryan-29-agro-ai.hf.space](https://aryan-29-agro-ai.hf.space)
 
-🔗 GitHub Repository: [https://github.com/aryanKDev/Agro-ai](https://github.com/aryanKDev/Agro-ai)
 
----
 
-# 📌 Features
 
-✅ AI-based Plant Disease Detection
 
-✅ Upload plant leaf images for prediction
 
-✅ Supports multiple plant diseases
+🚀 AI-powered smart agriculture assistant for plant disease detection, analytics, reporting, and intelligent crop monitoring.
 
-✅ Treatment and prevention suggestions
+🔗 Live Demo:
+AgroAI Live App
 
-✅ Gemini AI-powered chatbot assistant
+🔗 GitHub Repository:
+AgroAI GitHub Repository
 
-✅ Modern responsive frontend UI
+</div>
+📌 Overview
 
-✅ Flask backend API
+AgroAI is an advanced AI-powered agriculture platform designed to help farmers and users detect plant diseases using deep learning and computer vision.
 
-✅ TensorFlow/Keras deep learning model
+The system analyzes uploaded plant images, predicts diseases using a trained TensorFlow model, and provides:
 
-✅ Hugging Face deployment
+disease insights
+severity analysis
+treatment suggestions
+scan history
+analytics dashboard
+PDF reports
+voice interaction support
 
----
+The project combines Artificial Intelligence + Agriculture + Modern UI/UX into a lightweight production-style web application.
 
-# 🧠 Tech Stack
-
-## Frontend
-
-* HTML5
-* CSS3
-* JavaScript
-
-## Backend
-
-* Python
-* Flask
-* Flask-CORS
-
-## Machine Learning
-
-* TensorFlow
-* Keras
-* NumPy
-* Pillow
-
-## AI Chatbot
-
-* Google Gemini API
-
-## Deployment
-
-* Hugging Face Spaces
-
----
-
-# 📂 Project Structure
-
-```bash
+✨ Features
+🤖 AI Disease Detection
+Upload plant leaf images
+AI-powered disease prediction
+TensorFlow deep learning model
+Real-time prediction results
+🚨 Disease Severity Analysis
+Automatic HIGH / MEDIUM / LOW risk classification
+Confidence-based disease severity
+Smart warning indicators
+📜 Report History
+Automatically saves previous scans
+Local storage-based history system
+View recent disease reports instantly
+📄 PDF Report Generation
+Download professional AI-generated reports
+Includes:
+plant image
+disease name
+confidence
+precautions
+treatments
+severity
+📊 Dashboard Analytics
+Disease statistics
+Total scans
+Weekly scan trends
+Most detected diseases
+Interactive charts
+🎙️ Voice Input Support
+Web Speech API integration
+Speech-to-text interaction
+Hands-free user experience
+📷 Camera Capture
+Direct mobile camera support
+Upload or capture images instantly
+💬 AI Chat Assistant
+Gemini AI chatbot integration
+Plant care guidance
+Smart agricultural assistance
+🎨 Modern UI/UX
+Glassmorphism design
+Responsive layout
+Animated loaders
+Smooth transitions
+Mobile optimized
+🛠️ Tech Stack
+Technology	Usage
+Python	Backend
+Flask	Web Framework
+TensorFlow / Keras	AI Model
+HTML5	Structure
+CSS3	Styling
+JavaScript	Frontend Logic
+Chart.js	Analytics Dashboard
+jsPDF	PDF Generation
+html2canvas	Report Capture
+Gemini API	AI Chatbot
+🧠 AI Workflow
+Image Upload
+      ↓
+Image Preprocessing
+      ↓
+TensorFlow Model Prediction
+      ↓
+Disease Classification
+      ↓
+Severity Analysis
+      ↓
+Treatment & Prevention Suggestions
+      ↓
+History + Analytics + PDF Report
+📂 Project Structure
 Agro-ai/
 │
+├── static/
+│   ├── style.css
+│   ├── script.js
+│   ├── assets/
+│
+├── templates/
+│   └── index.html
+│
+├── model/
+│   └── trained_plant_disease_model.keras
+│
+├── disease_info.json
 ├── app.py
 ├── requirements.txt
-├── runtime.txt
-├── Dockerfile
-├── index.html
-├── style.css
-├── script.js
-├── disease_info.json
-├── trained_plant_disease_model.keras
-├── README.md
-├── settings.json
-├── Diseases.png
-├── training_hist.json
-└── test/
-```
-
----
-
-# ⚙️ Installation & Setup
-
-## 1️⃣ Clone Repository
-
-```bash
+├── .gitignore
+└── README.md
+⚡ Installation
+1️⃣ Clone Repository
 git clone https://github.com/aryanKDev/Agro-ai.git
-```
-
-## 2️⃣ Open Project Folder
-
-```bash
+2️⃣ Move Into Project Folder
 cd Agro-ai
-```
-
-## 3️⃣ Create Virtual Environment (Optional but Recommended)
-
-```bash
+3️⃣ Create Virtual Environment
 python -m venv venv
-```
-
-### Activate Virtual Environment
-
-#### Windows
-
-```bash
+4️⃣ Activate Virtual Environment
+Windows
 venv\Scripts\activate
-```
-
-#### Linux/Mac
-
-```bash
+Linux / Mac
 source venv/bin/activate
-```
-
----
-
-# 📦 Install Dependencies
-
-```bash
+5️⃣ Install Dependencies
 pip install -r requirements.txt
-```
-
----
-
-# 🔑 Environment Variables
-
-Create a `.env` file in the root directory and add:
-
-```env
-GOOGLE_API_KEY=your_gemini_api_key
-```
-
----
-
-# ▶️ Run the Application
-
-```bash
+6️⃣ Run Flask Server
 python app.py
-```
-
-The app will start on:
-
-```bash
+7️⃣ Open In Browser
 http://127.0.0.1:5000
-```
+📸 Screenshots
+🏠 Homepage
 
----
+Add screenshot here
 
-# 🖼️ How to Use
+🤖 Disease Prediction
 
-1. Upload a plant leaf image
-2. Click on “Analyze Image”
-3. View disease prediction results
-4. Read symptoms, treatment, and prevention
-5. Chat with the AI farming assistant
+Add screenshot here
 
----
+📊 Analytics Dashboard
 
-# 🤖 AI Chatbot
+Add screenshot here
 
-The chatbot supports:
+📄 PDF Report
 
-* Disease symptoms
-* Treatment guidance
-* Prevention methods
-* Farming advice
-* Crop health information
+Add screenshot here
 
-Powered by Google Gemini AI.
+📜 Scan History
 
----
+Add screenshot here
 
-# 📊 Model Information
+🌟 Major Features Added
 
-* Framework: TensorFlow / Keras
-* File: `trained_plant_disease_model.keras`
-* Trained on plant disease image datasets
-* Supports multiple crop disease classes
+✅ Report History System
+✅ Dashboard Analytics
+✅ PDF Report Generation
+✅ Disease Severity Detection
+✅ Voice Input Feature
+✅ AI Scanning Loader
+✅ Feedback System
+✅ Mobile Camera Capture
 
----
+🔒 Security
+.env protected using .gitignore
+No API keys exposed
+Safe Git workflow followed
+Clean production-ready repository structure
+🚀 Future Improvements
+Multi-language support
+Real-time weather integration
+Crop recommendation system
+Fertilizer recommendation AI
+IoT sensor integration
+Farmer community portal
+Cloud database support
+AI yield prediction
+👨‍💻 Developer
+Aryan Kushwaha
 
-# 🌍 Deployment
+🎓 B.Tech AIML Student
+💻 Full Stack Developer
+🤖 AI & MERN Stack Enthusiast
 
-This project is deployed on Hugging Face Spaces using Docker.
+🔗 GitHub:
+AryanKDev GitHub Profile
 
----
+📜 License
 
-# 🔒 Important Notes
+This project is licensed under the MIT License.
 
-* Do not upload your `.env` file publicly.
-* Keep your Gemini API key secure.
-* Dataset files are excluded from GitHub to keep the repository lightweight.
+⭐ Support
 
----
+If you like this project:
 
-# 📸 Screenshots
+🌟 Star the repository
+🍴 Fork the project
+🛠️ Contribute improvements
 
-You can add screenshots here later.
-
----
-
-# 👨‍💻 Author
-
-### Aryan Kushwaha
-
-B.Tech AIML Student | Full Stack Developer | AI Enthusiast
-
-GitHub: [https://github.com/aryanKDev](https://github.com/aryanKDev)
-
----
-
-# ⭐ Future Improvements
-
-* Better disease accuracy
-* Mobile application
-* Multi-language support
-* User authentication
-* Disease history tracking
-* Faster model optimization
-* More crop support
-
----
-
-# 📜 License
-
-This project is created for educational and learning purposes.
-
----
-
-# 🙌 Acknowledgements
-
-* TensorFlow
-* Flask
-* Hugging Face
-* Google Gemini AI
-* Open Source Community
+<div align="center">
+🌱 “Empowering Agriculture with Artificial Intelligence”
+</div>
