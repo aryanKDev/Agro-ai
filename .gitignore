@@ -1,44 +1,103 @@
-# Environment variables
+# ════════════════════════════════════════
+# AgroAI — .gitignore
+# ════════════════════════════════════════
+
+# ── Secrets & Environment ──
 .env
 *.env
+.env.*
+secrets.json
 
-# Dataset (large training data - not needed for deployment)
+# ── Dataset (large training data) ──
 Dataset/
+data/
 
-# Jupyter Notebooks (not needed for deployment)
+# ── Trained Model (too large for GitHub) ──
+# *.keras
+# *.h5
+# Keep trained_plant_disease_model.keras committed (needed for HuggingFace)
+
+# ── Jupyter Notebooks ──
 *.ipynb
 .ipynb_checkpoints/
+*-checkpoint.ipynb
 
-# Python cache
+# ── Python Cache ──
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 *.pyo
+*.pyd
 
-# Virtual environments
+# ── Virtual Environments ──
 venv/
 env/
 .venv/
+ENV/
 .env/
+virtualenv/
 
-# OS generated files
+# ── Node / npm (not used but safe to include) ──
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+
+# ── OS Generated ──
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# IDE / Editor files
+# ── IDE / Editor ──
 .vscode/
 .idea/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# Logs
+# ── Logs ──
 *.log
 logs/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Test directories (optional, keep if needed)
-# test/
-
-# Temporary files
+# ── Temporary / Cache ──
 *.tmp
 *.temp
+*.bak
+*.cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── TensorFlow / ML artifacts ──
+*.tfevents.*
+/tmp/
+mlruns/
+
+# ── Test output ──
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# ── Package distribution ──
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/

@@ -99,8 +99,8 @@ chat_sessions: dict = {}
 # Helper utilities
 # ===========================================================================
 
-def model_prediction(image_bytes: bytes) -> str:
-    """Run Keras model and return the predicted class name."""
+def model_prediction(image_bytes: bytes) -> tuple:
+    """Run Keras model and return (predicted class name, confidence %)."""
     img = Image.open(BytesIO(image_bytes))
     if img.mode != "RGB":
         img = img.convert("RGB")
@@ -109,7 +109,9 @@ def model_prediction(image_bytes: bytes) -> str:
     arr = np.expand_dims(arr, axis=0)
     preds = model.predict(arr)
     idx = int(np.argmax(preds))
-    return CLASS_NAMES[idx] if idx < len(CLASS_NAMES) else "Unknown_Class"
+    confidence = float(np.max(preds) * 100)
+    class_name = CLASS_NAMES[idx] if idx < len(CLASS_NAMES) else "Unknown_Class"
+    return class_name, round(confidence, 1)
 
 
 def _fmt_bullets(text: str) -> str:
@@ -291,8 +293,8 @@ def predict():
         else:
             return jsonify({"error": "No image file or URL provided"}), 400
 
-        prediction_key = model_prediction(image_bytes)
-        logger.info(f"Prediction result: {prediction_key}")
+        prediction_key, confidence = model_prediction(image_bytes)
+        logger.info(f"Prediction result: {prediction_key} | Confidence: {confidence}%")
 
         info       = disease_info_db.get(prediction_key, {})
         symptoms   = info.get("symptoms",   "Information not available in database.")
@@ -316,6 +318,7 @@ def predict():
             "symptoms":     symptoms,
             "treatment":    treatment,
             "prevention":   prevention,
+            "confidence":   confidence,
         })
 
     except requests.exceptions.RequestException as e:

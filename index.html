@@ -1,337 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AgroAI — Advanced AI-powered plant disease detection and smart farming intelligence platform. Upload crop images and get instant AI diagnosis.">
-    <title>AgroAI — AI-Powered Plant Disease Detection</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AgroAI — Advanced AI-powered plant disease detection, analytics, and smart farming intelligence platform.">
+  <title>AgroAI — AI-Powered Plant Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
-    <!-- ═══════════════════════ BACKGROUND EFFECTS ═══════════════════════ -->
-    <div class="bg-effects" aria-hidden="true">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-        <div class="noise-overlay"></div>
-        <canvas id="particles-canvas"></canvas>
+  <!-- AI LOADER OVERLAY -->
+  <div id="ai-loader-overlay" class="ai-loader-overlay hidden">
+    <div class="ai-loader-content">
+      <div class="ai-loader-orb"></div>
+      <div class="ai-loader-icon">🔬</div>
+      <div class="ai-loader-step" id="ai-loader-step">Analyzing leaf patterns…</div>
+      <div class="ai-loader-bar-track"><div class="ai-loader-bar" id="ai-loader-bar"></div></div>
+      <p class="ai-loader-sub">Deep learning model processing your image</p>
     </div>
+  </div>
 
-    <!-- ═══════════════════════ NAVBAR ═══════════════════════ -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-inner">
-            <a class="nav-logo" href="#hero" id="nav-logo-link">
-                <span class="logo-icon">🌿</span>
-                <span class="logo-text">Agro<span class="logo-accent">AI</span></span>
-                <span class="live-badge"><span class="live-dot"></span>Live</span>
-            </a>
-            <div class="nav-links">
-                <a href="#detector" class="nav-link">Detector</a>
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#stats" class="nav-link">Stats</a>
-                <a href="#detector" class="nav-cta-btn" id="nav-cta">Try Free →</a>
-            </div>
-            <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-                <span></span><span></span><span></span>
-            </button>
-        </div>
-    </nav>
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
 
-    <!-- ═══════════════════════ HERO SECTION ═══════════════════════ -->
+  <!-- BACKGROUND -->
+  <div class="bg-effects" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="noise-overlay"></div>
+    <canvas id="particles-canvas"></canvas>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a class="nav-logo" href="#" data-page="home" id="nav-logo-link">
+        <span class="logo-icon">🌿</span>
+        <span class="logo-text">Agro<span class="logo-accent">AI</span></span>
+        <span class="live-badge"><span class="live-dot"></span>Live</span>
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="#" class="nav-link nav-page-link active-nav" data-page="home">🏠 Home</a>
+        <a href="#" class="nav-link nav-page-link" data-page="history">📋 History</a>
+        <a href="#" class="nav-link nav-page-link" data-page="analytics">📊 Analytics</a>
+        <a href="#" class="nav-link nav-page-link" data-page="feedback">⭐ Feedback</a>
+        <a href="#detector" class="nav-cta-btn" id="nav-cta">Try Free →</a>
+      </div>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HOME PAGE ══════════════ -->
+  <div id="page-home" class="page-section">
+
     <section class="hero" id="hero">
-        <div class="hero-content">
-            <div class="hero-badge anim-fade-up" style="--delay:0s">
-                <span class="badge-dot"></span>
-                AI-Powered Agriculture Intelligence
-            </div>
-            <h1 class="hero-title anim-fade-up" style="--delay:0.1s">
-                <span class="gradient-text">AI-Powered</span><br>
-                Plant Disease<br>
-                <span class="gradient-text-green">Detection</span>
-            </h1>
-            <p class="hero-subtitle anim-fade-up" style="--delay:0.2s">
-                Advanced Crop Intelligence &amp; Smart Farming Assistant —<br>
-                diagnose plant diseases instantly with cutting-edge deep learning.
-            </p>
-            <div class="hero-actions anim-fade-up" style="--delay:0.3s">
-                <a href="#detector" class="btn-primary">
-                    <span>🔬 Analyze a Plant</span>
-                    <span class="btn-arrow">→</span>
-                </a>
-                <a href="#features" class="btn-ghost">View Features</a>
-            </div>
-            <div class="hero-pills anim-fade-up" style="--delay:0.4s">
-                <span class="pill">✅ 38+ Disease Classes</span>
-                <span class="pill">⚡ &lt;2s Inference</span>
-                <span class="pill">🛡️ Offline Expert Mode</span>
-            </div>
+      <div class="hero-content">
+        <div class="hero-badge anim-fade-up" style="--delay:0s"><span class="badge-dot"></span>AI-Powered Agriculture Intelligence</div>
+        <h1 class="hero-title anim-fade-up" style="--delay:0.1s">
+          <span class="gradient-text">AI-Powered</span><br>Plant Disease<br><span class="gradient-text-green">Detection</span>
+        </h1>
+        <p class="hero-subtitle anim-fade-up" style="--delay:0.2s">
+          Advanced Crop Intelligence &amp; Smart Farming Assistant —<br>diagnose plant diseases instantly with cutting-edge deep learning.
+        </p>
+        <div class="hero-actions anim-fade-up" style="--delay:0.3s">
+          <a href="#detector" class="btn-primary"><span>🔬 Analyze a Plant</span><span class="btn-arrow">→</span></a>
+          <a href="#" class="btn-ghost nav-page-link" data-page="analytics">View Analytics</a>
         </div>
-        <div class="hero-visual anim-fade-up" style="--delay:0.25s">
-            <div class="hero-card-float">
-                <div class="float-card fc-1">
-                    <span class="fc-icon">🌿</span>
-                    <div>
-                        <div class="fc-label">Model Accuracy</div>
-                        <div class="fc-value">97.4%</div>
-                    </div>
-                </div>
-                <div class="float-card fc-2">
-                    <span class="fc-icon">⚡</span>
-                    <div>
-                        <div class="fc-label">Avg Response</div>
-                        <div class="fc-value">1.8s</div>
-                    </div>
-                </div>
-                <div class="float-card fc-3">
-                    <span class="fc-icon">🔬</span>
-                    <div>
-                        <div class="fc-label">Diseases Detected</div>
-                        <div class="fc-value">38+</div>
-                    </div>
-                </div>
-                <div class="hero-orb"></div>
-            </div>
+        <div class="hero-pills anim-fade-up" style="--delay:0.4s">
+          <span class="pill">✅ 38+ Disease Classes</span>
+          <span class="pill">⚡ &lt;2s Inference</span>
+          <span class="pill">🛡️ Offline Expert Mode</span>
+          <span class="pill">📋 Scan History</span>
         </div>
+      </div>
+      <div class="hero-visual anim-fade-up" style="--delay:0.25s">
+        <div class="hero-card-float">
+          <div class="float-card fc-1"><span class="fc-icon">🌿</span><div><div class="fc-label">Model Accuracy</div><div class="fc-value">97.4%</div></div></div>
+          <div class="float-card fc-2"><span class="fc-icon">⚡</span><div><div class="fc-label">Avg Response</div><div class="fc-value">1.8s</div></div></div>
+          <div class="float-card fc-3"><span class="fc-icon">🔬</span><div><div class="fc-label">Diseases</div><div class="fc-value">38+</div></div></div>
+          <div class="hero-orb"></div>
+        </div>
+      </div>
     </section>
 
-    <!-- ═══════════════════════ STATS SECTION ═══════════════════════ -->
     <section class="stats-section" id="stats">
-        <div class="section-container">
-            <div class="stats-grid">
-                <div class="stat-card anim-fade-up" style="--delay:0s">
-                    <div class="stat-icon">🧬</div>
-                    <div class="stat-number" data-target="38">0</div>
-                    <div class="stat-label">Diseases Supported</div>
-                </div>
-                <div class="stat-card anim-fade-up" style="--delay:0.1s">
-                    <div class="stat-icon">🎯</div>
-                    <div class="stat-number" data-target="97" data-suffix="%">0</div>
-                    <div class="stat-label">AI Accuracy</div>
-                </div>
-                <div class="stat-card anim-fade-up" style="--delay:0.2s">
-                    <div class="stat-icon">⚡</div>
-                    <div class="stat-number" data-target="1" data-suffix=".8s">0</div>
-                    <div class="stat-label">Response Time</div>
-                </div>
-                <div class="stat-card anim-fade-up" style="--delay:0.3s">
-                    <div class="stat-icon">🌱</div>
-                    <div class="stat-number" data-target="100" data-suffix="%">0</div>
-                    <div class="stat-label">Offline Ready</div>
-                </div>
-            </div>
+      <div class="section-container">
+        <div class="stats-grid">
+          <div class="stat-card anim-fade-up" style="--delay:0s"><div class="stat-icon">🧬</div><div class="stat-number" data-target="38">0</div><div class="stat-label">Diseases Supported</div></div>
+          <div class="stat-card anim-fade-up" style="--delay:0.1s"><div class="stat-icon">🎯</div><div class="stat-number" data-target="97" data-suffix="%">0</div><div class="stat-label">AI Accuracy</div></div>
+          <div class="stat-card anim-fade-up" style="--delay:0.2s"><div class="stat-icon">⚡</div><div class="stat-number" data-target="1" data-suffix=".8s">0</div><div class="stat-label">Response Time</div></div>
+          <div class="stat-card anim-fade-up" style="--delay:0.3s"><div class="stat-icon">🌱</div><div class="stat-number" data-target="100" data-suffix="%">0</div><div class="stat-label">Offline Ready</div></div>
         </div>
+      </div>
     </section>
 
-    <!-- ═══════════════════════ MAIN DETECTOR ═══════════════════════ -->
     <section class="detector-section" id="detector">
-        <div class="section-container">
-            <div class="section-header anim-fade-up">
-                <div class="section-tag">Core Feature</div>
-                <h2 class="section-title">AI Disease <span class="gradient-text">Detector</span></h2>
-                <p class="section-sub">Upload your plant image or paste a URL for an instant AI-powered diagnosis</p>
-            </div>
-
-            <div class="main-content">
-
-                <!-- Upload Card -->
-                <div class="card glass-card anim-fade-up" style="--delay:0.1s">
-                    <div class="card-header-row">
-                        <div class="card-icon-wrap purple">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        </div>
-                        <h2 class="card-title">Provide an Image</h2>
-                    </div>
-                    <div class="upload-section">
-                        <div class="upload-area" id="upload-area">
-                            <div class="upload-icon-wrap">
-                                <div class="upload-icon" id="upload-icon-anim">📤</div>
-                                <div class="upload-ring"></div>
-                            </div>
-                            <input type="file" id="image-uploader" accept="image/png, image/jpeg, image/jpg">
-                            <label for="image-uploader" class="upload-label">Click to upload or drag &amp; drop</label>
-                            <p class="upload-hint">PNG, JPG, JPEG — max 10 MB</p>
-                        </div>
-
-                        <div class="or-divider"><span>or</span></div>
-
-                        <div class="url-input-wrap">
-                            <span class="url-icon">🔗</span>
-                            <input type="text" id="url-uploader" class="url-input" placeholder="Paste image URL here...">
-                        </div>
-
-                        <div id="image-preview" class="image-preview"></div>
-
-                        <button class="predict-button btn-primary" id="predict-button">
-                            <span class="btn-label">🔬 Analyze Image</span>
-                            <span class="btn-spinner hidden" id="btn-spinner"></span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Prevention / Placeholder Card -->
-                <div class="card glass-card anim-fade-up" id="prevention-card" style="--delay:0.2s">
-                    <div class="card-header-row">
-                        <div class="card-icon-wrap green">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <h2 class="card-title">⭐ Proactive Plant Care</h2>
-                    </div>
-                    <p class="card-desc">Preventing disease is easier than treating it. Here are expert-recommended tips:</p>
-                    <div class="result-item anim-fade-up" style="--delay:0.05s">
-                        <h3>🌬️ Promote Good Airflow</h3>
-                        <p>Prune plants and give them space. Good air circulation helps leaves dry quickly and prevents fungal growth.</p>
-                    </div>
-                    <div class="result-item anim-fade-up" style="--delay:0.1s">
-                        <h3>💧 Water Wisely</h3>
-                        <p>Water at the base of the plant, not on the leaves. Always water in the morning for best results.</p>
-                    </div>
-                    <div class="result-item anim-fade-up" style="--delay:0.15s">
-                        <h3>🧹 Practice Good Sanitation</h3>
-                        <p>Remove and destroy any dead or diseased leaves. Clean and sterilize your pruning tools regularly.</p>
-                    </div>
-                </div>
-
-                <!-- Results Card -->
-                <div class="card glass-card results hidden" id="results" style="--delay:0.1s">
-                    <div class="card-header-row">
-                        <div class="card-icon-wrap blue">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                        </div>
-                        <h2 class="card-title">🔍 Analysis Result</h2>
-                        <span class="ai-badge pulse-badge">AI Result</span>
-                    </div>
-
-                    <!-- Prediction Output -->
-                    <div class="prediction-card">
-                        <div class="prediction-label">Detected Condition</div>
-                        <div class="prediction-output" id="prediction-output">—</div>
-                        <div class="severity-row">
-                            <span class="severity-badge" id="severity-badge">Analyzing...</span>
-                            <div class="confidence-wrap">
-                                <span class="confidence-label">AI Confidence</span>
-                                <div class="confidence-bar-track">
-                                    <div class="confidence-bar" id="confidence-bar"></div>
-                                </div>
-                                <span class="confidence-value" id="confidence-value">—</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="result-item" id="symptoms-section">
-                        <h3>🔬 Symptoms</h3>
-                        <p id="symptoms-output"></p>
-                    </div>
-
-                    <div class="result-item" id="treatment-section">
-                        <h3>💊 Suggested Treatment</h3>
-                        <p id="treatment-output"></p>
-                    </div>
-
-                    <div class="result-item" id="prevention-section">
-                        <h3 id="prevention-title">🛡️ Prevention</h3>
-                        <p id="prevention-output"></p>
-                    </div>
-                </div>
-
-            </div><!-- /main-content -->
+      <div class="section-container">
+        <div class="section-header anim-fade-up">
+          <div class="section-tag">Core Feature</div>
+          <h2 class="section-title">AI Disease <span class="gradient-text">Detector</span></h2>
+          <p class="section-sub">Upload your plant image or paste a URL for an instant AI-powered diagnosis</p>
         </div>
+        <div class="main-content">
+
+          <!-- Upload Card -->
+          <div class="card glass-card anim-fade-up" style="--delay:0.1s">
+            <div class="card-header-row">
+              <div class="card-icon-wrap purple">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <h2 class="card-title">Provide an Image</h2>
+            </div>
+            <div class="upload-section">
+              <div class="upload-area" id="upload-area">
+                <div class="upload-icon-wrap">
+                  <div class="upload-icon" id="upload-icon-anim">📤</div>
+                  <div class="upload-ring"></div>
+                </div>
+                <input type="file" id="image-uploader" accept="image/png, image/jpeg, image/jpg">
+                <label for="image-uploader" class="upload-label">Click to upload or drag &amp; drop</label>
+                <p class="upload-hint">PNG, JPG, JPEG — max 10 MB</p>
+              </div>
+
+              <div class="camera-row">
+                <input type="file" id="camera-capture" accept="image/*" capture="environment" style="display:none">
+                <button class="btn-camera" id="camera-btn">📷 Take Photo</button>
+                <span class="camera-hint">Use device camera</span>
+              </div>
+
+              <div class="or-divider"><span>or</span></div>
+              <div class="url-input-wrap">
+                <span class="url-icon">🔗</span>
+                <input type="text" id="url-uploader" class="url-input" placeholder="Paste image URL here...">
+              </div>
+              <div id="image-preview" class="image-preview"></div>
+              <button class="predict-button btn-primary" id="predict-button">
+                <span class="btn-label">🔬 Analyze Image</span>
+                <span class="btn-spinner hidden" id="btn-spinner"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Prevention Card -->
+          <div class="card glass-card anim-fade-up" id="prevention-card" style="--delay:0.2s">
+            <div class="card-header-row">
+              <div class="card-icon-wrap green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <h2 class="card-title">⭐ Proactive Plant Care</h2>
+            </div>
+            <p class="card-desc">Preventing disease is easier than treating it. Here are expert-recommended tips:</p>
+            <div class="result-item"><h3>🌬️ Promote Good Airflow</h3><p>Prune plants and give them space. Good air circulation helps leaves dry quickly and prevents fungal growth.</p></div>
+            <div class="result-item"><h3>💧 Water Wisely</h3><p>Water at the base of the plant, not on the leaves. Always water in the morning for best results.</p></div>
+            <div class="result-item"><h3>🧹 Practice Good Sanitation</h3><p>Remove and destroy any dead or diseased leaves. Clean and sterilize your pruning tools regularly.</p></div>
+          </div>
+
+          <!-- Results Card -->
+          <div class="card glass-card results hidden" id="results" style="--delay:0.1s">
+            <div class="card-header-row">
+              <div class="card-icon-wrap blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <h2 class="card-title">🔍 Analysis Result</h2>
+              <span class="ai-badge pulse-badge">AI Result</span>
+            </div>
+            <div class="prediction-card" id="result-snapshot">
+              <div class="prediction-label">Detected Condition</div>
+              <div class="prediction-output" id="prediction-output">—</div>
+              <div class="severity-row">
+                <span class="severity-badge" id="severity-badge">Analyzing...</span>
+                <div class="confidence-wrap">
+                  <span class="confidence-label">AI Confidence</span>
+                  <div class="confidence-bar-track"><div class="confidence-bar" id="confidence-bar"></div></div>
+                  <span class="confidence-value" id="confidence-value">—</span>
+                </div>
+              </div>
+              <div class="severity-warning hidden" id="severity-warning">
+                ⚠️ <strong>HIGH RISK — Immediate treatment recommended.</strong> This disease can spread rapidly. Act now to protect your crop.
+              </div>
+            </div>
+            <div class="result-item" id="symptoms-section"><h3>🔬 Symptoms</h3><p id="symptoms-output"></p></div>
+            <div class="result-item" id="treatment-section"><h3>💊 Suggested Treatment</h3><p id="treatment-output"></p></div>
+            <div class="result-item" id="prevention-section"><h3 id="prevention-title">🛡️ Prevention</h3><p id="prevention-output"></p></div>
+            <div class="result-actions">
+              <button class="btn-pdf" id="download-pdf-btn">📄 Download AI Report</button>
+              <button class="btn-ghost btn-sm" id="save-history-manual-btn">💾 Save to History</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </section>
 
-    <!-- ═══════════════════════ CHATBOT ═══════════════════════ -->
     <section class="chat-section">
-        <div class="section-container">
-            <div class="card glass-card chat-container hidden" id="chat-container">
-                <div class="chat-header">
-                    <div class="chat-avatar">
-                        <span>🤖</span>
-                    </div>
-                    <div class="chat-header-info">
-                        <h2>💬 Ask Our Expert Bot</h2>
-                        <div class="chat-status">
-                            <span class="status-dot"></span>
-                            <span id="chat-mode-label">AI Agriculture Expert • Online</span>
-                        </div>
-                    </div>
-                    <span class="local-mode-badge hidden" id="local-mode-badge">🌱 Local Expert Mode</span>
-                </div>
-
-                <div class="chat-box" id="chat-box"></div>
-
-                <div class="chat-input-container">
-                    <input type="text" id="chat-message" placeholder="Ask about symptoms, treatment, prevention...">
-                    <button class="chat-send-button" id="chat-send-button">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                    </button>
-                </div>
+      <div class="section-container">
+        <div class="card glass-card chat-container hidden" id="chat-container">
+          <div class="chat-header">
+            <div class="chat-avatar"><span>🤖</span></div>
+            <div class="chat-header-info">
+              <h2>💬 Ask Our Expert Bot</h2>
+              <div class="chat-status"><span class="status-dot"></span><span id="chat-mode-label">AI Agriculture Expert • Online</span></div>
             </div>
+            <span class="local-mode-badge hidden" id="local-mode-badge">🌱 Local Expert Mode</span>
+          </div>
+          <div class="chat-box" id="chat-box"></div>
+          <div class="chat-input-container">
+            <input type="text" id="chat-message" placeholder="Ask about symptoms, treatment, prevention...">
+            <button class="voice-btn" id="voice-btn" title="Voice input">🎤</button>
+            <button class="chat-send-button" id="chat-send-button">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
         </div>
+      </div>
     </section>
 
-    <!-- ═══════════════════════ FEATURES ═══════════════════════ -->
     <section class="features-section" id="features">
-        <div class="section-container">
-            <div class="section-header anim-fade-up">
-                <div class="section-tag">Platform</div>
-                <h2 class="section-title">Why Choose <span class="gradient-text">AgroAI</span>?</h2>
-                <p class="section-sub">A complete intelligent farming assistant powered by state-of-the-art deep learning</p>
-            </div>
-            <div class="features-grid">
-                <div class="feature-card anim-fade-up" style="--delay:0s">
-                    <div class="feature-icon-wrap purple">🧬</div>
-                    <h3 class="feature-title">AI Detection</h3>
-                    <p class="feature-desc">Deep CNN model trained on 87,000+ plant images with 97%+ accuracy across 38 disease classes.</p>
-                    <div class="feature-tag">TensorFlow • Keras</div>
-                </div>
-                <div class="feature-card anim-fade-up" style="--delay:0.1s">
-                    <div class="feature-icon-wrap blue">📊</div>
-                    <h3 class="feature-title">Disease Analytics</h3>
-                    <p class="feature-desc">Get detailed symptoms, severity assessment, and actionable treatment protocols instantly.</p>
-                    <div class="feature-tag">Real-time Analysis</div>
-                </div>
-                <div class="feature-card anim-fade-up" style="--delay:0.2s">
-                    <div class="feature-icon-wrap green">🌿</div>
-                    <h3 class="feature-title">Smart Recommendations</h3>
-                    <p class="feature-desc">Powered by Gemini AI, get personalized prevention and care advice tailored to your crop.</p>
-                    <div class="feature-tag">Gemini 1.5 Flash</div>
-                </div>
-                <div class="feature-card anim-fade-up" style="--delay:0.3s">
-                    <div class="feature-icon-wrap orange">🛡️</div>
-                    <h3 class="feature-title">Offline Expert Mode</h3>
-                    <p class="feature-desc">Local disease knowledge base ensures expert guidance even without internet connectivity.</p>
-                    <div class="feature-tag">100% Offline Ready</div>
-                </div>
-            </div>
+      <div class="section-container">
+        <div class="section-header anim-fade-up">
+          <div class="section-tag">Platform</div>
+          <h2 class="section-title">Why Choose <span class="gradient-text">AgroAI</span>?</h2>
+          <p class="section-sub">A complete intelligent farming assistant powered by state-of-the-art deep learning</p>
         </div>
+        <div class="features-grid">
+          <div class="feature-card anim-fade-up" style="--delay:0s"><div class="feature-icon-wrap purple">🧬</div><h3 class="feature-title">AI Detection</h3><p class="feature-desc">Deep CNN model trained on 87,000+ plant images with 97%+ accuracy across 38 disease classes.</p><div class="feature-tag">TensorFlow • Keras</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.1s"><div class="feature-icon-wrap blue">📊</div><h3 class="feature-title">Disease Analytics</h3><p class="feature-desc">Interactive charts showing your scan history, disease trends, and health statistics.</p><div class="feature-tag">Chart.js</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.2s"><div class="feature-icon-wrap green">🌿</div><h3 class="feature-title">Smart Recommendations</h3><p class="feature-desc">Powered by Gemini AI, get personalized prevention and care advice tailored to your crop.</p><div class="feature-tag">Gemini 1.5 Flash</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.3s"><div class="feature-icon-wrap orange">🛡️</div><h3 class="feature-title">Offline Expert Mode</h3><p class="feature-desc">Local disease knowledge base ensures expert guidance even without internet connectivity.</p><div class="feature-tag">100% Offline Ready</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.4s"><div class="feature-icon-wrap purple">📋</div><h3 class="feature-title">Scan History</h3><p class="feature-desc">Every scan saved locally. Review past diagnoses and track disease patterns over time.</p><div class="feature-tag">localStorage</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.5s"><div class="feature-icon-wrap blue">📄</div><h3 class="feature-title">PDF Reports</h3><p class="feature-desc">Download professional AI-generated disease reports with full treatment plans.</p><div class="feature-tag">jsPDF • html2canvas</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.6s"><div class="feature-icon-wrap green">🎤</div><h3 class="feature-title">Voice Input</h3><p class="feature-desc">Ask the AI expert hands-free using your voice. Powered by Web Speech API.</p><div class="feature-tag">Web Speech API</div></div>
+          <div class="feature-card anim-fade-up" style="--delay:0.7s"><div class="feature-icon-wrap orange">📷</div><h3 class="feature-title">Camera Capture</h3><p class="feature-desc">Capture plant photos directly from your mobile device camera for instant diagnosis.</p><div class="feature-tag">Mobile Optimized</div></div>
+        </div>
+      </div>
     </section>
 
-    <!-- ═══════════════════════ FOOTER ═══════════════════════ -->
     <footer class="footer">
-        <div class="section-container">
-            <div class="footer-inner">
-                <div class="footer-brand">
-                    <div class="footer-logo">🌿 Agro<span class="logo-accent">AI</span></div>
-                    <p class="footer-tagline">Next-generation crop intelligence for every farmer.</p>
-                    <div class="footer-tech-badges">
-                        <span class="tech-badge">Python</span>
-                        <span class="tech-badge">TensorFlow</span>
-                        <span class="tech-badge">Flask</span>
-                        <span class="tech-badge">Gemini AI</span>
-                    </div>
-                </div>
-                <div class="footer-right">
-                    <div class="footer-made">
-                        Made with <span class="heart">❤️</span> and <span class="ai-text">AI</span>
-                    </div>
-                    <p class="footer-copy">© 2026 AgroAI. Plant Disease Detection System.</p>
-                </div>
+      <div class="section-container">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <div class="footer-logo">🌿 Agro<span class="logo-accent">AI</span></div>
+            <p class="footer-tagline">Next-generation crop intelligence for every farmer.</p>
+            <div class="footer-tech-badges">
+              <span class="tech-badge">Python</span><span class="tech-badge">TensorFlow</span><span class="tech-badge">Flask</span><span class="tech-badge">Gemini AI</span>
             </div>
+          </div>
+          <div class="footer-right">
+            <div class="footer-made">Made with <span class="heart">❤️</span> and <span class="ai-text">AI</span></div>
+            <p class="footer-copy">© 2026 AgroAI. Plant Disease Detection System.</p>
+          </div>
         </div>
+      </div>
     </footer>
 
-    <script src="script.js"></script>
+  </div><!-- /page-home -->
+
+  <!-- ══════════════ HISTORY PAGE ══════════════ -->
+  <div id="page-history" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+        <div class="inner-page-header">
+          <div class="section-tag">Scan Records</div>
+          <h2 class="section-title">📋 Scan <span class="gradient-text">History</span></h2>
+          <p class="section-sub">All your previous AI disease analyses — saved locally on your device</p>
+        </div>
+        <div class="history-toolbar" id="history-toolbar">
+          <div class="history-meta" id="history-meta"></div>
+          <div class="history-actions">
+            <button class="btn-ghost btn-sm" id="clear-all-btn">🗑️ Clear All</button>
+          </div>
+        </div>
+        <div class="history-grid" id="history-grid"></div>
+        <div class="empty-state hidden" id="history-empty">
+          <div class="empty-icon">🌱</div>
+          <h3>No Scans Yet</h3>
+          <p>Your scan history will appear here after you analyze your first plant image.</p>
+          <button class="btn-primary" id="go-scan-btn">🔬 Start Scanning</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════════════ ANALYTICS PAGE ══════════════ -->
+  <div id="page-analytics" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+        <div class="inner-page-header">
+          <div class="section-tag">Insights</div>
+          <h2 class="section-title">📊 Analytics <span class="gradient-text">Dashboard</span></h2>
+          <p class="section-sub">Visualize your crop health trends and disease statistics</p>
+        </div>
+        <!-- KPI Cards -->
+        <div class="analytics-kpi-grid" id="analytics-kpi-grid">
+          <div class="kpi-card"><div class="kpi-icon">🔬</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total Scans</div></div>
+          <div class="kpi-card"><div class="kpi-icon">🦠</div><div class="kpi-value" id="kpi-diseased">0</div><div class="kpi-label">Diseases Detected</div></div>
+          <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value" id="kpi-healthy">0</div><div class="kpi-label">Healthy Plants</div></div>
+          <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" id="kpi-top" style="font-size:0.85rem">—</div><div class="kpi-label">Most Common Disease</div></div>
+        </div>
+        <!-- Charts -->
+        <div class="charts-grid">
+          <div class="chart-card glass-card">
+            <h3 class="chart-title">🍕 Health Ratio</h3>
+            <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
+          </div>
+          <div class="chart-card glass-card">
+            <h3 class="chart-title">📊 Disease Distribution</h3>
+            <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
+          </div>
+          <div class="chart-card glass-card chart-full">
+            <h3 class="chart-title">📈 Weekly Scan Trend</h3>
+            <div class="chart-wrap"><canvas id="chart-line"></canvas></div>
+          </div>
+        </div>
+        <div class="empty-state hidden" id="analytics-empty">
+          <div class="empty-icon">📊</div>
+          <h3>No Data Yet</h3>
+          <p>Scan your first plant image to see analytics and insights.</p>
+          <button class="btn-primary" id="go-scan-analytics-btn">🔬 Start Scanning</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══════════════ FEEDBACK PAGE ══════════════ -->
+  <div id="page-feedback" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+        <div class="inner-page-header">
+          <div class="section-tag">Community</div>
+          <h2 class="section-title">⭐ User <span class="gradient-text">Feedback</span></h2>
+          <p class="section-sub">Share your experience and help us improve AgroAI</p>
+        </div>
+        <div class="feedback-layout">
+          <!-- Submit Form -->
+          <div class="glass-card feedback-form-card">
+            <h3 class="feedback-form-title">Rate Your Experience</h3>
+            <div class="star-rating" id="star-rating">
+              <span class="star" data-val="1">★</span>
+              <span class="star" data-val="2">★</span>
+              <span class="star" data-val="3">★</span>
+              <span class="star" data-val="4">★</span>
+              <span class="star" data-val="5">★</span>
+            </div>
+            <p class="star-label" id="star-label">Click to rate</p>
+            <textarea id="feedback-text" class="feedback-textarea" placeholder="Share your thoughts (optional)..." rows="4"></textarea>
+            <button class="btn-primary feedback-submit-btn" id="feedback-submit-btn">Submit Feedback</button>
+          </div>
+          <!-- Insights -->
+          <div class="feedback-insights">
+            <div class="glass-card feedback-stats-card">
+              <h3 class="feedback-form-title">Feedback Insights</h3>
+              <div class="insight-row"><div class="insight-big" id="avg-rating">—</div><div class="insight-label">Average Rating</div></div>
+              <div class="insight-row"><div class="insight-big" id="total-feedback">0</div><div class="insight-label">Total Responses</div></div>
+            </div>
+            <div class="feedback-list" id="feedback-list"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
