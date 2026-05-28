@@ -19,10 +19,13 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 from io import BytesIO
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
+import base64
+import database
+import pdf_generator
 
 # ---------------------------------------------------------------------------
 # Google Generative AI SDK  (pip install google-generativeai)
@@ -96,8 +99,21 @@ CLASS_NAMES = list(disease_info_db.keys())
 chat_sessions: dict = {}
 
 # ===========================================================================
-# Helper utilities
-# ===========================================================================
+def create_thumbnail_base64(image_bytes: bytes, max_size=(256, 256)) -> str:
+    """Generate a small JPEG base64 data URL from image bytes for database storage."""
+    try:
+        img = Image.open(BytesIO(image_bytes))
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.thumbnail(max_size)
+        buffered = BytesIO()
+        img.save(buffered, format="JPEG", quality=80)
+        img_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        return f"data:image/jpeg;base64,{img_str}"
+    except Exception as e:
+        logger.error(f"Failed to generate thumbnail: {e}")
+        return None
+
 
 def model_prediction(image_bytes: bytes) -> tuple:
     """Run Keras model and return (predicted class name, confidence %)."""
@@ -312,7 +328,41 @@ def predict():
             .strip()
         )
 
+        # Determine severity based on confidence and health status
+        is_healthy = "healthy" in prediction_key.lower()
+        if is_healthy:
+            severity = "LOW"
+        elif confidence >= 90:
+            severity = "HIGH"
+        elif confidence >= 70:
+            severity = "MEDIUM"
+        else:
+            severity = "LOW"
+
+        # Generate a lightweight Base64 preview for database storage
+        image_data_url = create_thumbnail_base64(image_bytes)
+
+        # Extract upload filename if available
+        filename = None
+        if "file" in request.files:
+            filename = request.files["file"].filename
+        elif request.is_json and request.get_json().get("url"):
+            # Extract filename from URL as fallback
+            url_path = request.get_json()["url"].split("/")[-1]
+            filename = url_path.split("?")[0] if url_path else "url_upload.jpg"
+
+        # Save scan to MongoDB
+        scan_id = database.save_scan(
+            disease=disease_name,
+            confidence=confidence,
+            severity=severity,
+            is_healthy=is_healthy,
+            image_data_url=image_data_url,
+            filename=filename
+        )
+
         return jsonify({
+            "id": scan_id,  # MongoDB ID (or None if offline)
             "prediction":   prediction_key,
             "disease_name": disease_name,
             "symptoms":     symptoms,
@@ -327,6 +377,132 @@ def predict():
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
+
+
+# ---------------------------------------------------------------------------
+# MongoDB API Routes for Scan History
+# ---------------------------------------------------------------------------
+
+@app.route("/api/scans", methods=["GET"])
+def get_scans_api():
+    """GET /api/scans - Fetch all historical scan records from MongoDB Atlas."""
+    try:
+        scans = database.get_scans()
+        return jsonify(scans)
+    except Exception as e:
+        logger.error(f"Error fetching scans in API: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scans/<scan_id>", methods=["DELETE"])
+def delete_scan_api(scan_id):
+    """DELETE /api/scans/<scan_id> - Delete a specific scan by its database ID."""
+    try:
+        success = database.delete_scan(scan_id)
+        if success:
+            return jsonify({"success": True, "message": f"Scan {scan_id} deleted successfully"})
+        else:
+            return jsonify({"success": False, "message": "Scan not found or database offline"}), 404
+    except Exception as e:
+        logger.error(f"Error deleting scan in API: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/scans", methods=["DELETE"])
+def clear_all_scans_api():
+    """DELETE /api/scans - Delete all scans from the database (bulk clear)."""
+    try:
+        success = database.clear_all()
+        if success:
+            return jsonify({"success": True, "message": "All scans cleared successfully"})
+        else:
+            return jsonify({"success": False, "message": "Failed to clear scans or database offline"}), 500
+    except Exception as e:
+        logger.error(f"Error clearing scans in API: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# PDF Report Generation Route
+# ---------------------------------------------------------------------------
+
+@app.route("/generate-report", methods=["POST"])
+def generate_report():
+    """
+    POST /generate-report
+    Generates a premium professional PDF report for a given scan.
+
+    Accepts multipart/form-data:
+      - file         (optional)  : re-uploaded image, OR
+      - data         (required)  : JSON string with scan fields:
+            disease_name, confidence, symptoms, treatment, prevention,
+            severity, is_healthy, scan_id, db_id, filename, plant_type
+      - image_data_url (optional): base64 data URL from scan result
+
+    Returns: application/pdf binary stream
+    """
+    try:
+        # ── Parse JSON payload ──────────────────────────────────────────
+        if request.is_json:
+            data = request.get_json() or {}
+            image_bytes = None
+        else:
+            # multipart form with optional re-uploaded file
+            raw_data = request.form.get("data", "{}")
+            try:
+                data = json.loads(raw_data)
+            except json.JSONDecodeError:
+                data = {}
+
+            image_bytes = None
+            if "file" in request.files:
+                image_bytes = request.files["file"].read()
+
+        disease_name    = data.get("disease_name",  "Unknown Disease")
+        confidence      = float(data.get("confidence", 0))
+        symptoms        = data.get("symptoms",     "No symptom data available.")
+        treatment       = data.get("treatment",    "No treatment data available.")
+        prevention      = data.get("prevention",   "No prevention data available.")
+        severity        = data.get("severity",     "LOW")
+        is_healthy      = bool(data.get("is_healthy", False))
+        scan_id         = data.get("scan_id")  or data.get("id")
+        db_id           = data.get("db_id")    or data.get("id")
+        filename        = data.get("filename")
+        plant_type      = data.get("plant_type")
+        image_data_url  = data.get("image_data_url") or data.get("imageDataUrl")
+
+        logger.info(f"Generating PDF report for: {disease_name} | confidence: {confidence}")
+
+        # ── Generate PDF ────────────────────────────────────────────────
+        pdf_bytes = pdf_generator.generate_pdf_report(
+            disease_name    = disease_name,
+            confidence      = confidence,
+            symptoms        = symptoms,
+            treatment       = treatment,
+            prevention      = prevention,
+            severity        = severity,
+            is_healthy      = is_healthy,
+            scan_id         = scan_id,
+            db_id           = db_id,
+            image_bytes     = image_bytes,
+            image_data_url  = image_data_url,
+            filename        = filename,
+            plant_type      = plant_type,
+        )
+
+        safe_name = (disease_name or "Report").replace(" ", "_")[:40]
+        pdf_filename = f"AgroAI_Report_{safe_name}.pdf"
+
+        return send_file(
+            BytesIO(pdf_bytes),
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=pdf_filename,
+        )
+
+    except Exception as e:
+        logger.error(f"PDF generation error: {e}")
+        return jsonify({"error": f"PDF generation failed: {str(e)}"}), 500
 
 
 @app.route("/chat", methods=["POST"])

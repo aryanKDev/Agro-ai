@@ -8,16 +8,74 @@ const API_URL = "http://127.0.0.1:5000";
 const Storage = {
   HISTORY_KEY: "agroai_history",
   FEEDBACK_KEY: "agroai_feedback",
-  getHistory() { try { return JSON.parse(localStorage.getItem(this.HISTORY_KEY) || "[]"); } catch { return []; } },
-  saveHistory(arr) { localStorage.setItem(this.HISTORY_KEY, JSON.stringify(arr)); },
-  addScan(entry) {
-    const h = this.getHistory();
-    h.unshift({ id: Date.now(), ...entry });
-    if (h.length > 100) h.pop();
-    this.saveHistory(h);
+
+  // Local storage fallback methods (synchronous)
+  getLocalHistory() { try { return JSON.parse(localStorage.getItem(this.HISTORY_KEY) || "[]"); } catch { return []; } },
+  saveLocalHistory(arr) { localStorage.setItem(this.HISTORY_KEY, JSON.stringify(arr)); },
+  addLocalScan(entry) {
+    const h = this.getLocalHistory();
+    // Prevent duplicate entries in local cache
+    if (!h.some(item => item.id === entry.id)) {
+      h.unshift(entry);
+      if (h.length > 100) h.pop();
+      this.saveLocalHistory(h);
+    }
   },
-  deleteScan(id) { this.saveHistory(this.getHistory().filter(e => e.id !== id)); },
-  clearHistory() { localStorage.removeItem(this.HISTORY_KEY); },
+  deleteLocalScan(id) { this.saveLocalHistory(this.getLocalHistory().filter(e => e.id !== id && e.id != id)); },
+  clearLocalHistory() { localStorage.removeItem(this.HISTORY_KEY); },
+
+  // Unified async methods that communicate with backend but fallback to local
+  async getHistory() {
+    try {
+      const res = await fetch(API_URL + '/api/scans');
+      if (!res.ok) throw new Error("Server response error");
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        // Sync local cache with database records
+        this.saveLocalHistory(data);
+        return data;
+      }
+    } catch (e) {
+      console.warn("Failed to fetch scan history from MongoDB Atlas, using offline localStorage cache:", e);
+    }
+    return this.getLocalHistory();
+  },
+
+  async addScan(entry) {
+    // Generate a fallback ID if backend is down and database returned None
+    if (!entry.id) {
+      entry.id = 'local_' + Date.now();
+    }
+    this.addLocalScan(entry);
+  },
+
+  async deleteScan(id) {
+    // 1. Delete locally first for instant UI responsiveness
+    this.deleteLocalScan(id);
+    
+    // 2. Sync deletion with MongoDB
+    try {
+      const res = await fetch(`${API_URL}/api/scans/${id}`, { method: 'DELETE' });
+      if (!res.ok) console.warn("Failed to delete scan on MongoDB backend");
+    } catch (e) {
+      console.warn("Failed to sync delete to MongoDB Atlas:", e);
+    }
+  },
+
+  async clearHistory() {
+    // 1. Clear locally first
+    this.clearLocalHistory();
+    
+    // 2. Sync with MongoDB
+    try {
+      const res = await fetch(API_URL + '/api/scans', { method: 'DELETE' });
+      if (!res.ok) console.warn("Failed to clear scans on MongoDB backend");
+    } catch (e) {
+      console.warn("Failed to sync clear to MongoDB Atlas:", e);
+    }
+  },
+
   getFeedback() { try { return JSON.parse(localStorage.getItem(this.FEEDBACK_KEY) || "[]"); } catch { return []; } },
   addFeedback(entry) {
     const f = this.getFeedback();
@@ -97,90 +155,101 @@ const Severity = {
   }
 };
 
-// ── PDF GENERATOR ──────────────────────────────
+// ── PDF GENERATOR (Backend-Powered — Premium ReportLab PDF) ──────────────
 const PDF = {
   async generate() {
     const btn = document.getElementById("download-pdf-btn");
-    btn.textContent = "⏳ Generating…"; btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.innerHTML = `<span class="btn-label">⏳ Generating Premium Report…</span>`;
+    btn.disabled = true;
+
     try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const W = 210, M = 18;
-      let y = M;
-      // Header
-      doc.setFillColor(10, 10, 15); doc.rect(0, 0, W, 40, "F");
-      doc.setFillColor(124, 58, 237); doc.rect(0, 38, W, 2, "F");
-      doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(255,255,255);
-      doc.text("🌿 AgroAI — Plant Disease Report", M, 24);
-      doc.setFontSize(9); doc.setTextColor(148,163,184);
-      doc.text("AI-Powered Crop Health Monitoring System", M, 32);
-      y = 52;
-      // Meta
-      const disease = document.getElementById("prediction-output").textContent;
-      const confidence = document.getElementById("confidence-value").textContent;
-      const severity = document.getElementById("severity-badge").textContent;
-      const now = new Date().toLocaleString();
-      doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(30,30,30);
-      doc.text("Detected Condition", M, y); y += 8;
-      doc.setFont("helvetica", "bold"); doc.setFontSize(20); doc.setTextColor(124,58,237);
-      doc.text(disease || "Unknown", M, y); y += 10;
-      doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(60,60,60);
-      doc.text(`AI Confidence: ${confidence}   |   Severity: ${severity}`, M, y); y += 7;
-      doc.text(`Scan Date: ${now}`, M, y); y += 14;
-      // Image
+      // ── Gather all scan data from the current result ──────────────────
+      const disease      = document.getElementById("prediction-output")?.textContent?.trim() || "Unknown";
+      const confidenceEl = document.getElementById("confidence-value");
+      const confidence   = parseFloat(confidenceEl?.textContent || "0");
+      const severityEl   = document.getElementById("severity-badge");
+      const severityRaw  = severityEl?.textContent || "";
+
+      // Map severity badge text to API value
+      let severity = "LOW";
+      if (severityRaw.includes("HIGH"))   severity = "HIGH";
+      else if (severityRaw.includes("MEDIUM")) severity = "MEDIUM";
+
+      const symptoms   = document.getElementById("symptoms-output")?.innerText?.trim()   || "";
+      const treatment  = document.getElementById("treatment-output")?.innerText?.trim()  || "";
+      const prevention = document.getElementById("prevention-output")?.innerText?.trim() || "";
+
+      // Detect healthy state
+      const isHealthy = !!(lastResult?.isHealthy);
+
+      // Get image data URL from preview (if exists)
       const imgEl = document.querySelector("#image-preview img");
-      if (imgEl && imgEl.src) {
-        try {
-          const canvas = await html2canvas(document.getElementById("image-preview"), { scale: 1, useCORS: true });
-          const imgData = canvas.toDataURL("image/jpeg", 0.85);
-          const maxW = 80, aspect = canvas.width / canvas.height;
-          const ih = maxW / aspect;
-          doc.addImage(imgData, "JPEG", M, y, maxW, Math.min(ih, 60));
-          y += Math.min(ih, 60) + 10;
-        } catch { y += 4; }
-      }
-      // Sections
-      const sections = [
-        { title: "🔬 Symptoms", id: "symptoms-output" },
-        { title: "💊 Suggested Treatment", id: "treatment-output" },
-        { title: "🛡️ Prevention", id: "prevention-output" }
-      ];
-      sections.forEach(({ title, id }) => {
-        const text = document.getElementById(id)?.innerText?.trim();
-        if (!text) return;
-        if (y > 240) { doc.addPage(); y = M; }
-        doc.setFillColor(245, 243, 255); doc.rect(M - 2, y - 5, W - 2 * M + 4, 9, "F");
-        doc.setFont("helvetica", "bold"); doc.setFontSize(12); doc.setTextColor(124,58,237);
-        doc.text(title, M, y); y += 7;
-        doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(50,50,50);
-        const lines = doc.splitTextToSize(text, W - 2 * M);
-        lines.forEach(line => {
-          if (y > 275) { doc.addPage(); y = M; }
-          doc.text(line, M, y); y += 6;
-        });
-        y += 6;
+      const imageDataUrl = (imgEl && imgEl.src && imgEl.src.startsWith("data:")) ? imgEl.src : null;
+
+      // Scan & DB IDs from last result
+      const scanId  = lastResult?.id || ("SCAN-" + Date.now());
+      const dbId    = (lastResult?.id && !String(lastResult.id).startsWith("local_")) ? lastResult.id : null;
+      const fname   = lastResult?.filename || currentFile?.name || "upload.jpg";
+
+      // ── Send to backend /generate-report ─────────────────────────────
+      const payload = {
+        disease_name:    disease,
+        confidence:      confidence,
+        symptoms:        symptoms,
+        treatment:       treatment,
+        prevention:      prevention,
+        severity:        severity,
+        is_healthy:      isHealthy,
+        scan_id:         scanId,
+        db_id:           dbId,
+        filename:        fname,
+        image_data_url:  imageDataUrl,
+        plant_type:      disease.split(" ")[0] || "Plant",
+      };
+
+      const res = await fetch(API_URL + "/generate-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
-      // Footer
-      doc.setFillColor(10,10,15); doc.rect(0, 285, W, 12, "F");
-      doc.setFont("helvetica", "italic"); doc.setFontSize(8); doc.setTextColor(100,100,100);
-      doc.text("Generated by AgroAI © 2026 — AI-Powered Plant Disease Detection System", M, 292);
-      doc.save(`AgroAI_Report_${disease.replace(/\s+/g, "_")}_${Date.now()}.pdf`);
-      Toast.show("PDF report downloaded!", "success");
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `Server error ${res.status}`);
+      }
+
+      // ── Trigger file download from binary blob ────────────────────────
+      const blob     = await res.blob();
+      const url      = URL.createObjectURL(blob);
+      const safeName = disease.replace(/[^a-z0-9]/gi, "_").slice(0, 40);
+      const link     = document.createElement("a");
+      link.href      = url;
+      link.download  = `AgroAI_Report_${safeName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      Toast.show("✅ Premium AI Report downloaded successfully!", "success");
+
     } catch (e) {
+      console.error("PDF generation error:", e);
       Toast.show("PDF generation failed: " + e.message, "error");
     } finally {
-      btn.textContent = "📄 Download AI Report"; btn.disabled = false;
+      btn.innerHTML = `<span class="btn-label">${originalText}</span>`;
+      btn.disabled  = false;
     }
   }
 };
 
 // ── HISTORY MANAGER ────────────────────────────
 const HistoryManager = {
-  render() {
+  async render() {
     const grid = document.getElementById("history-grid");
     const empty = document.getElementById("history-empty");
     const meta = document.getElementById("history-meta");
-    const items = Storage.getHistory();
+    const items = await Storage.getHistory();
     if (!items.length) {
       grid.innerHTML = ""; empty.classList.remove("hidden"); meta.textContent = "";
       return;
@@ -192,7 +261,11 @@ const HistoryManager = {
         ? `<img class="history-card-img" src="${item.imageDataUrl}" alt="${item.disease}" loading="lazy">`
         : `<div class="history-card-img-placeholder">🌿</div>`;
       const sevCls = item.severity === "HIGH" ? "sev-high" : item.severity === "MEDIUM" ? "sev-medium" : "sev-low";
-      const date = new Date(item.id).toLocaleString();
+      
+      // Support both MongoDB ISO string timestamp and local millisecond ID
+      const timestampSource = item.timestamp || item.id;
+      const date = isNaN(Number(timestampSource)) ? new Date(timestampSource).toLocaleString() : new Date(Number(timestampSource)).toLocaleString();
+      
       return `<div class="history-card" id="hcard-${item.id}">
         ${imgPart}
         <div class="history-card-body">
@@ -204,21 +277,21 @@ const HistoryManager = {
           <div class="history-card-time">${date}</div>
         </div>
         <div class="history-card-footer">
-          <span style="color:var(--text2);font-size:.75rem">📋 Scan #${item.id}</span>
-          <button class="history-delete-btn" onclick="HistoryManager.delete(${item.id})">🗑️ Delete</button>
+          <span style="color:var(--text2);font-size:.75rem">📋 Scan #${item.id.toString().slice(-6)}</span>
+          <button class="history-delete-btn" onclick="HistoryManager.delete('${item.id}')">🗑️ Delete</button>
         </div>
       </div>`;
     }).join("");
   },
-  delete(id) {
-    Storage.deleteScan(id);
+  async delete(id) {
+    await Storage.deleteScan(id);
     const card = document.getElementById("hcard-" + id);
     if (card) { card.style.opacity = "0"; card.style.transform = "scale(0.9)"; setTimeout(() => this.render(), 300); }
     Toast.show("Scan deleted.", "info");
   },
-  clearAll() {
+  async clearAll() {
     if (!confirm("Delete all scan history? This cannot be undone.")) return;
-    Storage.clearHistory(); this.render();
+    await Storage.clearHistory(); await this.render();
     Toast.show("All history cleared.", "info");
   }
 };
@@ -226,8 +299,8 @@ const HistoryManager = {
 // ── ANALYTICS ──────────────────────────────────
 const Analytics = {
   charts: {},
-  render() {
-    const items = Storage.getHistory();
+  async render() {
+    const items = await Storage.getHistory();
     const empty = document.getElementById("analytics-empty");
     if (!items.length) { empty.classList.remove("hidden"); return; }
     empty.classList.add("hidden");
@@ -285,7 +358,9 @@ const Analytics = {
       days[d.toLocaleDateString("en", { month: "short", day: "numeric" })] = 0;
     }
     items.forEach(item => {
-      const d = new Date(item.id).toLocaleDateString("en", { month: "short", day: "numeric" });
+      const ts = item.timestamp || item.id;
+      const parsedTs = isNaN(Number(ts)) ? ts : Number(ts);
+      const d = new Date(parsedTs).toLocaleDateString("en", { month: "short", day: "numeric" });
       if (d in days) days[d]++;
     });
     const def = this.chartDefaults();
@@ -418,7 +493,7 @@ function handleFile(file) { currentFile = file; urlUploader.value = ''; const re
 urlUploader.addEventListener('input', () => { const url = urlUploader.value.trim(); if (url) { currentFile = null; imageUploader.value = ''; if (uploadLabel) uploadLabel.textContent = 'Click to upload or drag & drop'; imagePreview.innerHTML = '<img src=' + url + ' alt=Preview onerror=this.parentElement.style.display=\'none\'>'; imagePreview.style.display = 'block'; } else { imagePreview.innerHTML = ''; imagePreview.style.display = 'none'; } });
 predictButton.addEventListener('click', async () => { const imageUrl = urlUploader.value.trim(); let requestBody, requestHeaders = {}; if (currentFile) { const fd = new FormData(); fd.append('file', currentFile); requestBody = fd; } else if (imageUrl) { requestBody = JSON.stringify({ url: imageUrl }); requestHeaders['Content-Type'] = 'application/json'; } else { Toast.show('Please choose an image file or paste a URL.', 'error'); return; } setLoading(true); AILoader.show(); preventionCard.classList.add('hidden'); resultsDiv.classList.add('hidden'); chatContainer.classList.add('hidden'); try { const res = await fetch(API_URL + '/predict', { method: 'POST', headers: requestHeaders, body: requestBody }); if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Prediction failed'); } const data = await res.json(); AILoader.hide(); displayPrediction(data); chatContext = { ...chatContext, disease: data.disease_name, symptoms: data.symptoms, treatment: data.treatment, prevention: data.prevention }; chatBox.innerHTML = ''; addMessageToChat('Welcome! I detected **' + data.disease_name + '**.\n\nAsk me about:\n- **Symptoms**\n- **Treatment**\n- **Prevention**\n\n_I am here to help!_', 'bot'); } catch (err) { AILoader.hide(); Toast.show('Error: ' + err.message, 'error'); preventionCard.classList.remove('hidden'); } finally { setLoading(false); } });
 function setLoading(on) { const lbl = predictButton.querySelector('.btn-label'), sp = document.getElementById('btn-spinner'); predictButton.disabled = on; if (lbl) lbl.textContent = on ? 'Analyzing...' : 'Analyze Image'; if (sp) sp.classList.toggle('hidden', !on); predictButton.classList.toggle('loading', on); }
-function displayPrediction(data) { predictionOutput.textContent = data.disease_name; symptomsOutput.innerHTML = (data.symptoms || '').replace(/\n/g, '<br>'); treatmentOutput.innerHTML = (data.treatment || '').replace(/\n/g, '<br>'); preventionOutput.innerHTML = (data.prevention || '').replace(/\n/g, '<br>'); const isHealthy = data.prediction.includes('healthy'); const confidence = typeof data.confidence === 'number' ? data.confidence : (isHealthy ? 97 : 92); const sev = Severity.get(confidence); const bar = document.getElementById('confidence-bar'), val = document.getElementById('confidence-value'), badge = document.getElementById('severity-badge'), warn = document.getElementById('severity-warning'); if (bar) setTimeout(() => { bar.style.width = confidence + '%'; }, 300); if (val) val.textContent = confidence + '%'; if (isHealthy) { predictionOutput.classList.add('healthy'); symptomsSection.classList.add('hidden'); treatmentSection.classList.add('hidden'); preventionTitle.textContent = 'How to Keep it Healthy'; if (badge) { badge.textContent = 'Healthy'; badge.className = 'severity-badge sev-low'; } if (warn) warn.classList.add('hidden'); } else { predictionOutput.classList.remove('healthy'); symptomsSection.classList.remove('hidden'); treatmentSection.classList.remove('hidden'); preventionTitle.textContent = 'Prevention'; if (badge) { badge.textContent = sev.label; badge.className = 'severity-badge ' + sev.cls; } if (warn) warn.classList.toggle('hidden', sev.cls !== 'sev-high'); } resultsDiv.classList.remove('hidden'); chatContainer.classList.remove('hidden'); resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); const imgEl = document.querySelector('#image-preview img'); let imageDataUrl = null; if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) imageDataUrl = imgEl.src; lastResult = { imageDataUrl, disease: data.disease_name, confidence, severity: isHealthy ? 'LOW' : (sev.cls === 'sev-high' ? 'HIGH' : sev.cls === 'sev-medium' ? 'MEDIUM' : 'LOW'), isHealthy }; Storage.addScan(lastResult); Toast.show('Scan saved: ' + data.disease_name + ' (' + confidence + '%)', 'success'); }
+function displayPrediction(data) { predictionOutput.textContent = data.disease_name; symptomsOutput.innerHTML = (data.symptoms || '').replace(/\n/g, '<br>'); treatmentOutput.innerHTML = (data.treatment || '').replace(/\n/g, '<br>'); preventionOutput.innerHTML = (data.prevention || '').replace(/\n/g, '<br>'); const isHealthy = data.prediction.includes('healthy'); const confidence = typeof data.confidence === 'number' ? data.confidence : (isHealthy ? 97 : 92); const sev = Severity.get(confidence); const bar = document.getElementById('confidence-bar'), val = document.getElementById('confidence-value'), badge = document.getElementById('severity-badge'), warn = document.getElementById('severity-warning'); if (bar) setTimeout(() => { bar.style.width = confidence + '%'; }, 300); if (val) val.textContent = confidence + '%'; if (isHealthy) { predictionOutput.classList.add('healthy'); symptomsSection.classList.add('hidden'); treatmentSection.classList.add('hidden'); preventionTitle.textContent = 'How to Keep it Healthy'; if (badge) { badge.textContent = 'Healthy'; badge.className = 'severity-badge sev-low'; } if (warn) warn.classList.add('hidden'); } else { predictionOutput.classList.remove('healthy'); symptomsSection.classList.remove('hidden'); treatmentSection.classList.remove('hidden'); preventionTitle.textContent = 'Prevention'; if (badge) { badge.textContent = sev.label; badge.className = 'severity-badge ' + sev.cls; } if (warn) warn.classList.toggle('hidden', sev.cls !== 'sev-high'); } resultsDiv.classList.remove('hidden'); chatContainer.classList.remove('hidden'); resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); const imgEl = document.querySelector('#image-preview img'); let imageDataUrl = null; if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) imageDataUrl = imgEl.src; lastResult = { id: data.id, imageDataUrl, disease: data.disease_name, confidence, severity: isHealthy ? 'LOW' : (sev.cls === 'sev-high' ? 'HIGH' : sev.cls === 'sev-medium' ? 'MEDIUM' : 'LOW'), isHealthy }; Storage.addScan(lastResult); Toast.show('Scan saved: ' + data.disease_name + ' (' + confidence + '%)', 'success'); }
 document.getElementById('download-pdf-btn') && document.getElementById('download-pdf-btn').addEventListener('click', () => PDF.generate());
 document.getElementById('save-history-manual-btn') && document.getElementById('save-history-manual-btn').addEventListener('click', () => { if (lastResult) { Storage.addScan(lastResult); Toast.show('Saved!', 'success'); } else Toast.show('No result yet.', 'info'); });
 document.getElementById('clear-all-btn') && document.getElementById('clear-all-btn').addEventListener('click', () => HistoryManager.clearAll());

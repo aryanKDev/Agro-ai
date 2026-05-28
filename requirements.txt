@@ -8,3 +8,7 @@ requests
 python-dotenv
 google-generativeai
 gunicorn
+pymongo[srv]
+dnspython
+reportlab
+qrcode[pil]
