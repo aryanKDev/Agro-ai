@@ -9,23 +9,29 @@ Author notes:
   - Full graceful fallback to local DB if Gemini is unavailable
   - python-dotenv for safe API key loading
   - Structured logging for easy demo/viva monitoring
+  - Flask-JWT-Extended for multi-user SaaS authentication (Phase 1A)
 """
 
 import os
 import json
 import time
 import logging
+import datetime
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 from io import BytesIO
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity, verify_jwt_in_request
 from dotenv import load_dotenv
 import requests
 import base64
 import database
 import pdf_generator
+import risk_engine
+from services.weather_service  import get_weather, get_weather_by_coords
+from services.farming_insights import generate_farming_insights
 
 # ---------------------------------------------------------------------------
 # Google Generative AI SDK  (pip install google-generativeai)
@@ -45,18 +51,14 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Load .env and configure Gemini
 # ---------------------------------------------------------------------------
-load_dotenv()  # reads GOOGLE_API_KEY from the .env file in the project root
+load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY not set in .env – chatbot will run in offline mode only.")
 
-# Stable free-tier model for the google-generativeai SDK.
-# gemini-1.5-flash has a generous free quota.
-# The local-DB-first strategy in the chat route minimises API calls further.
 GEMINI_MODEL = "gemini-1.5-flash"
 
-# Configure the SDK once at startup (safe if key is None – handled in chat route)
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
     logger.info(f"Gemini SDK configured | model: {GEMINI_MODEL}")
@@ -68,7 +70,25 @@ else:
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=BASE_DIR, template_folder=BASE_DIR)
-CORS(app)
+CORS(app, supports_credentials=True)
+
+# ---------------------------------------------------------------------------
+# JWT Configuration
+# ---------------------------------------------------------------------------
+app.config["JWT_SECRET_KEY"] = os.getenv(
+    "JWT_SECRET_KEY", "agroai_fallback_secret_change_in_production_2026"
+)
+_expires_seconds = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES", 86400))
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(seconds=_expires_seconds)
+
+jwt = JWTManager(app)
+
+# ---------------------------------------------------------------------------
+# Register Auth Blueprint
+# ---------------------------------------------------------------------------
+from auth.auth_routes import auth_bp
+app.register_blueprint(auth_bp)
+logger.info("Auth blueprint registered at /api/auth")
 
 # ---------------------------------------------------------------------------
 # Load ML model and disease info database
@@ -92,11 +112,30 @@ except Exception as e:
     logger.critical(f"Startup failure: {e}")
     exit(1)
 
-# Class names order must match what the model was trained on
 CLASS_NAMES = list(disease_info_db.keys())
 
 # In-memory conversational session store  { session_id -> list[dict] }
 chat_sessions: dict = {}
+
+# In-memory weather cache  { city_lower -> {data, expires_at} }
+_weather_cache: dict = {}
+
+
+# ===========================================================================
+# Helper: Extract current user from JWT (optional — does not fail if no token)
+# ===========================================================================
+def get_optional_user_id() -> str | None:
+    """
+    Try to extract the JWT identity from the request.
+    Returns the user_id string if authenticated, else None.
+    Does NOT raise an error if no token is present.
+    """
+    try:
+        verify_jwt_in_request(optional=True)
+        return get_jwt_identity()
+    except Exception:
+        return None
+
 
 # ===========================================================================
 def create_thumbnail_base64(image_bytes: bytes, max_size=(256, 256)) -> str:
@@ -138,7 +177,6 @@ def _fmt_bullets(text: str) -> str:
         line = line.strip()
         if not line:
             continue
-        # Already starts with a number "1. ..."
         import re
         if re.match(r'^\d+\.\s', line):
             line = "• " + re.sub(r'^\d+\.\s*', '', line)
@@ -160,7 +198,6 @@ def build_local_response(db_key: str, user_message: str) -> str | None:
 
     header = f"🌱 *Powered by Local Plant Expert Mode*"
 
-    # --- Intent detection ---
     if any(kw in msg_lower for kw in ["symptom", "sign", "look like", "how does it look"]):
         symptoms = _fmt_bullets(info.get("symptoms", "No data available."))
         return (
@@ -195,7 +232,6 @@ def build_local_response(db_key: str, user_message: str) -> str | None:
             f"🛡️ **How to stop it from spreading:**\n{prevention}"
         )
     else:
-        # Generic full overview
         symptoms   = _fmt_bullets(info.get("symptoms",   "N/A"))
         treatment  = _fmt_bullets(info.get("treatment",  "N/A"))
         prevention = _fmt_bullets(info.get("prevention", "N/A"))
@@ -224,7 +260,6 @@ def call_gemini_with_retry(
     if not GOOGLE_API_KEY:
         raise RuntimeError("Gemini SDK not configured (no API key).")
 
-    # Build the model with a system instruction
     model_instance = genai.GenerativeModel(
         model_name=GEMINI_MODEL,
         system_instruction=system_instruction,
@@ -234,19 +269,16 @@ def call_gemini_with_retry(
         ),
     )
 
-    # history is a list of dicts: [{"role": "user"|"model", "parts": [str]}, ...]
     last_error = None
     for attempt in range(max_retries + 1):
         try:
             chat = model_instance.start_chat(history=history)
             response = chat.send_message(user_message)
 
-            # Guard: empty / blocked response
             reply = getattr(response, "text", None)
             if not reply:
                 raise ValueError("Gemini returned an empty response.")
 
-            # Serialize updated history to plain dicts for JSON-safe storage
             updated_history = [
                 {"role": m.role, "parts": [p.text for p in m.parts]}
                 for m in chat.history
@@ -292,6 +324,9 @@ def predict():
     Accepts:  multipart/form-data  → field 'file'  (uploaded image)
               application/json     → field 'url'   (public image URL)
     Returns:  JSON with prediction, disease_name, symptoms, treatment, prevention
+
+    Authentication: Optional JWT. If authenticated, scan is saved to user account.
+    If not authenticated, scan is saved as anonymous (legacy) record.
     """
     image_bytes = None
     try:
@@ -328,7 +363,6 @@ def predict():
             .strip()
         )
 
-        # Determine severity based on confidence and health status
         is_healthy = "healthy" in prediction_key.lower()
         if is_healthy:
             severity = "LOW"
@@ -339,36 +373,69 @@ def predict():
         else:
             severity = "LOW"
 
-        # Generate a lightweight Base64 preview for database storage
         image_data_url = create_thumbnail_base64(image_bytes)
 
-        # Extract upload filename if available
         filename = None
         if "file" in request.files:
             filename = request.files["file"].filename
         elif request.is_json and request.get_json().get("url"):
-            # Extract filename from URL as fallback
             url_path = request.get_json()["url"].split("/")[-1]
             filename = url_path.split("?")[0] if url_path else "url_upload.jpg"
 
-        # Save scan to MongoDB
+        # ── Extract user_id from JWT if present (optional auth) ───────────
+        user_id = get_optional_user_id()
+        logger.info(f"[/predict] user_id from JWT: {user_id!r}  (None = guest scan)")
+
+        # ── Auto risk analysis (uses simulated weather as default) ─────────
+        weather_snap = None
+        risk_level   = None
+        risk_score   = None
+        try:
+            default_weather = get_weather("Bhopal")
+            weather_snap = {
+                "temperature": default_weather.get("temperature"),
+                "humidity":    default_weather.get("humidity"),
+                "rainChance":  default_weather.get("rainChance"),
+                "windSpeed":   default_weather.get("windSpeed"),
+                "condition":   default_weather.get("condition"),
+                "city":        default_weather.get("city", "Bhopal"),
+            }
+            risk_result = risk_engine.analyse_risk(
+                disease     = disease_name,
+                humidity    = default_weather.get("humidity", 60),
+                temperature = default_weather.get("temperature", 28),
+            )
+            risk_level = risk_result.get("risk")
+            risk_score = risk_result.get("score")
+        except Exception as re:
+            logger.warning(f"Risk analysis skipped: {re}")
+
+        # Save scan to MongoDB (with weather + risk)
         scan_id = database.save_scan(
-            disease=disease_name,
-            confidence=confidence,
-            severity=severity,
-            is_healthy=is_healthy,
-            image_data_url=image_data_url,
-            filename=filename
+            disease          = disease_name,
+            confidence       = confidence,
+            severity         = severity,
+            is_healthy       = is_healthy,
+            image_data_url   = image_data_url,
+            filename         = filename,
+            user_id          = user_id,
+            weather_snapshot = weather_snap,
+            risk_level       = risk_level,
+            risk_score       = risk_score,
         )
+        logger.info(f"[/predict] MongoDB insert → scan_id: {scan_id!r}  user_id: {user_id!r}")
 
         return jsonify({
-            "id": scan_id,  # MongoDB ID (or None if offline)
+            "id":           scan_id,
             "prediction":   prediction_key,
             "disease_name": disease_name,
             "symptoms":     symptoms,
             "treatment":    treatment,
             "prevention":   prevention,
             "confidence":   confidence,
+            "riskLevel":    risk_level,
+            "riskScore":    risk_score,
+            "riskReason":   (risk_result or {}).get("reason"),
         })
 
     except requests.exceptions.RequestException as e:
@@ -380,14 +447,21 @@ def predict():
 
 
 # ---------------------------------------------------------------------------
-# MongoDB API Routes for Scan History
+# MongoDB API Routes for Scan History (user-scoped)
 # ---------------------------------------------------------------------------
 
 @app.route("/api/scans", methods=["GET"])
 def get_scans_api():
-    """GET /api/scans - Fetch all historical scan records from MongoDB Atlas."""
+    """
+    GET /api/scans
+    Authenticated: returns only the current user's scans.
+    Guest: returns legacy anonymous scans only.
+    """
     try:
-        scans = database.get_scans()
+        user_id = get_optional_user_id()
+        logger.info(f"[GET /api/scans] user_id={user_id!r}")
+        scans = database.get_scans(user_id=user_id)
+        logger.info(f"[GET /api/scans] Returning {len(scans)} scans for user_id={user_id!r}")
         return jsonify(scans)
     except Exception as e:
         logger.error(f"Error fetching scans in API: {e}")
@@ -396,9 +470,10 @@ def get_scans_api():
 
 @app.route("/api/scans/<scan_id>", methods=["DELETE"])
 def delete_scan_api(scan_id):
-    """DELETE /api/scans/<scan_id> - Delete a specific scan by its database ID."""
+    """DELETE /api/scans/<scan_id> — Delete a specific scan (scoped to user if authenticated)."""
     try:
-        success = database.delete_scan(scan_id)
+        user_id = get_optional_user_id()
+        success = database.delete_scan(scan_id, user_id=user_id)
         if success:
             return jsonify({"success": True, "message": f"Scan {scan_id} deleted successfully"})
         else:
@@ -410,15 +485,124 @@ def delete_scan_api(scan_id):
 
 @app.route("/api/scans", methods=["DELETE"])
 def clear_all_scans_api():
-    """DELETE /api/scans - Delete all scans from the database (bulk clear)."""
+    """DELETE /api/scans — Clear all scans for the current user (or legacy if guest)."""
     try:
-        success = database.clear_all()
+        user_id = get_optional_user_id()
+        success = database.clear_all(user_id=user_id)
         if success:
             return jsonify({"success": True, "message": "All scans cleared successfully"})
         else:
             return jsonify({"success": False, "message": "Failed to clear scans or database offline"}), 500
     except Exception as e:
         logger.error(f"Error clearing scans in API: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+
+# ---------------------------------------------------------------------------
+# Phase 1B — Personalised Dashboard
+# ---------------------------------------------------------------------------
+
+@app.route("/api/dashboard", methods=["GET"])
+@jwt_required()
+def dashboard_api():
+    """
+    GET /api/dashboard  (JWT required)
+    Returns personalised KPIs and activity data for the logged-in user.
+    """
+    try:
+        user_id = get_jwt_identity()
+        stats   = database.get_dashboard_stats(user_id)
+        return jsonify({"success": True, **stats})
+    except Exception as e:
+        logger.error(f"Dashboard API error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Phase 1C — Real-Time Weather
+# ---------------------------------------------------------------------------
+
+@app.route("/api/weather", methods=["GET"])
+def weather_api():
+    """
+    GET /api/weather?city=Bhopal
+    GET /api/weather?lat=23.25&lon=77.41   ← Bug #2 fix: GPS coords support
+    Returns agricultural weather data. Caches responses for 30 min.
+    Authentication: Optional.
+    """
+    import time as _time
+
+    lat_str = request.args.get("lat", "").strip()
+    lon_str = request.args.get("lon", "").strip()
+
+    # ── Geolocation lookup (Bug #2 fix) ──────────────────────────────────────
+    if lat_str and lon_str:
+        try:
+            lat = float(lat_str)
+            lon = float(lon_str)
+        except ValueError:
+            return jsonify({"error": "Invalid lat/lon values"}), 400
+
+        coord_key = f"coords_{lat:.2f}_{lon:.2f}"
+        cached = _weather_cache.get(coord_key)
+        if cached and cached["expires_at"] > _time.time():
+            logger.info(f"Weather cache hit (coords): {coord_key}")
+            return jsonify({**cached["data"], "cached": True})
+
+        try:
+            weather  = get_weather_by_coords(lat, lon)
+            insights = generate_farming_insights(weather)
+            payload  = {**weather, "insights": insights}
+            _weather_cache[coord_key] = {"data": payload, "expires_at": _time.time() + 1800}
+            return jsonify(payload)
+        except Exception as e:
+            logger.error(f"Weather coords API error: {e}")
+            return jsonify({"error": str(e)}), 500
+
+    # ── City lookup (original) ────────────────────────────────────────────────
+    city     = request.args.get("city", "Bhopal").strip()
+    city_key = city.lower()
+
+    cached = _weather_cache.get(city_key)
+    if cached and cached["expires_at"] > _time.time():
+        logger.info(f"Weather cache hit: {city_key}")
+        return jsonify({**cached["data"], "cached": True})
+
+    try:
+        weather  = get_weather(city)
+        insights = generate_farming_insights(weather)
+        payload  = {**weather, "insights": insights}
+        _weather_cache[city_key] = {"data": payload, "expires_at": _time.time() + 1800}
+        return jsonify(payload)
+    except Exception as e:
+        logger.error(f"Weather API error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Phase 1E — Disease Spread Risk Analysis
+# ---------------------------------------------------------------------------
+
+@app.route("/api/risk-analysis", methods=["POST"])
+def risk_analysis_api():
+    """
+    POST /api/risk-analysis
+    Body: { disease, humidity, temperature }
+    Returns: { risk, score, reason, category }
+    Authentication: Optional.
+    """
+    try:
+        data        = request.get_json() or {}
+        disease     = data.get("disease", "Unknown")
+        humidity    = float(data.get("humidity", 60))
+        temperature = float(data.get("temperature", 28))
+
+        result = risk_engine.analyse_risk(disease, humidity, temperature)
+        return jsonify({**result, "success": True})
+
+    except Exception as e:
+        logger.error(f"Risk analysis API error: {e}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -431,23 +615,20 @@ def generate_report():
     """
     POST /generate-report
     Generates a premium professional PDF report for a given scan.
+    Authentication: Optional JWT (used for future report personalization).
 
     Accepts multipart/form-data:
       - file         (optional)  : re-uploaded image, OR
-      - data         (required)  : JSON string with scan fields:
-            disease_name, confidence, symptoms, treatment, prevention,
-            severity, is_healthy, scan_id, db_id, filename, plant_type
+      - data         (required)  : JSON string with scan fields
       - image_data_url (optional): base64 data URL from scan result
 
     Returns: application/pdf binary stream
     """
     try:
-        # ── Parse JSON payload ──────────────────────────────────────────
         if request.is_json:
             data = request.get_json() or {}
             image_bytes = None
         else:
-            # multipart form with optional re-uploaded file
             raw_data = request.form.get("data", "{}")
             try:
                 data = json.loads(raw_data)
@@ -473,7 +654,6 @@ def generate_report():
 
         logger.info(f"Generating PDF report for: {disease_name} | confidence: {confidence}")
 
-        # ── Generate PDF ────────────────────────────────────────────────
         pdf_bytes = pdf_generator.generate_pdf_report(
             disease_name    = disease_name,
             confidence      = confidence,
@@ -528,10 +708,7 @@ def chat():
 
     logger.info(f"[{session_id}] User: {user_message!r} | Disease: {disease_context!r}")
 
-    # ------------------------------------------------------------------
     # Layer 1: Answer from local disease_info.json (zero API cost)
-    # ------------------------------------------------------------------
-    # Match the disease context to a DB key
     matching_key = next(
         (k for k in disease_info_db
          if disease_context.lower() in k.lower() or k.lower() in disease_context.lower()),
@@ -540,7 +717,6 @@ def chat():
 
     local_answer = build_local_response(matching_key, user_message) if matching_key else None
 
-    # Serve locally for clearly factual queries – saves API quota
     FACTUAL_KEYWORDS = [
         "symptom", "sign", "treat", "cure", "prevent", "avoid",
         "cause", "why", "medicine", "spray", "fungicide", "what is", "how to"
@@ -551,10 +727,7 @@ def chat():
         logger.info(f"[{session_id}] Served from local DB (no API call).")
         return jsonify({"response": local_answer})
 
-    # ------------------------------------------------------------------
-    # Layer 2: Gemini 1.5 Flash – open-ended / conversational queries
-    # ------------------------------------------------------------------
-    # Rich system prompt (prompt engineering for agri-assistant persona)
+    # Layer 2: Gemini 1.5 Flash
     system_instruction = (
         "You are an intelligent and empathetic agriculture assistant specializing in plant diseases. "
         "Your mission: help farmers, gardeners, and students understand plant health, "
@@ -569,11 +742,10 @@ def chat():
         "Do NOT repeat the context verbatim."
     )
 
-    # Retrieve or initialise session history (list of dicts)
     if session_id not in chat_sessions:
         chat_sessions[session_id] = []
 
-    history = chat_sessions[session_id]  # list[dict] with role + parts keys
+    history = chat_sessions[session_id]
 
     try:
         reply_text, updated_history = call_gemini_with_retry(
@@ -582,7 +754,6 @@ def chat():
             user_message=user_message,
         )
 
-        # Persist history (already plain dicts from call_gemini_with_retry)
         chat_sessions[session_id] = updated_history
 
         logger.info(f"[{session_id}] Gemini responded OK.")
@@ -592,9 +763,7 @@ def chat():
         err_str = str(exc)
         logger.error(f"[{session_id}] Gemini failed: {err_str}")
 
-        # ------------------------------------------------------------------
-        # Layer 3: Graceful fallback — NEVER expose API errors to the user
-        # ------------------------------------------------------------------
+        # Layer 3: Graceful fallback
         if local_answer:
             fallback = (
                 f"🌱 *Powered by Local Plant Expert Mode*\n\n"
@@ -604,7 +773,6 @@ def chat():
             logger.info(f"[{session_id}] Falling back to local DB.")
             return jsonify({"response": fallback, "mode": "local"})
 
-        # No local answer either — give a warm, helpful generic response
         disease_display = disease_context.replace("_", " ").strip() if disease_context else "your plant"
         msg = (
             f"🌱 *Powered by Local Plant Expert Mode*\n\n"

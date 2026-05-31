@@ -6,6 +6,7 @@
 .env
 *.env
 .env.*
+!.env.example
 secrets.json
 
 # ── Dataset (large training data) ──
@@ -101,3 +102,9 @@ coverage.xml
 dist/
 build/
 .eggs/
+
+# ── Dev/test scripts (local only) ──
+verify_bugfix.py
+prove_scan_fix.py
+secret_scan.py
+AgroAI_Demo_Report.pdf

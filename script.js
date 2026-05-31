@@ -27,19 +27,31 @@ const Storage = {
   // Unified async methods that communicate with backend but fallback to local
   async getHistory() {
     try {
-      const res = await fetch(API_URL + '/api/scans');
-      if (!res.ok) throw new Error("Server response error");
+      const headers = window.Auth ? Auth.getAuthHeaders() : {};
+      const token = window.Auth ? Auth.getToken() : null;
+      console.log('[Storage.getHistory] isLoggedIn:', window.Auth ? Auth.isLoggedIn() : false, '| hasToken:', !!token);
+      const res = await fetch(API_URL + '/api/scans', { headers });
+      if (!res.ok) throw new Error('Server error ' + res.status);
       const data = await res.json();
-      
-      if (Array.isArray(data)) {
-        // Sync local cache with database records
+      console.log('[Storage.getHistory] Server returned', data.length, 'scans');
+      if (Array.isArray(data) && data.length > 0) {
+        // Only overwrite local cache when server actually has records
         this.saveLocalHistory(data);
         return data;
       }
+      if (Array.isArray(data) && data.length === 0) {
+        // Server returned empty — user has no cloud scans yet
+        // Return empty (not local cache) so UI shows correct state
+        console.log('[Storage.getHistory] Server has 0 records for this user/session');
+        return [];
+      }
     } catch (e) {
-      console.warn("Failed to fetch scan history from MongoDB Atlas, using offline localStorage cache:", e);
+      console.warn('[Storage.getHistory] Backend unreachable, using localStorage cache:', e.message);
     }
-    return this.getLocalHistory();
+    // Fallback: return localStorage cache
+    const local = this.getLocalHistory();
+    console.log('[Storage.getHistory] Returning', local.length, 'cached records from localStorage');
+    return local;
   },
 
   async addScan(entry) {
@@ -47,36 +59,34 @@ const Storage = {
     if (!entry.id) {
       entry.id = 'local_' + Date.now();
     }
+    // Always tag with timestamp for sorting
+    if (!entry.timestamp) entry.timestamp = new Date().toISOString();
     this.addLocalScan(entry);
   },
 
   async deleteScan(id) {
-    // 1. Delete locally first for instant UI responsiveness
     this.deleteLocalScan(id);
-    
-    // 2. Sync deletion with MongoDB
     try {
-      const res = await fetch(`${API_URL}/api/scans/${id}`, { method: 'DELETE' });
-      if (!res.ok) console.warn("Failed to delete scan on MongoDB backend");
+      const headers = window.Auth ? Auth.getAuthHeaders() : {};
+      const res = await fetch(`${API_URL}/api/scans/${id}`, { method: 'DELETE', headers });
+      if (!res.ok) console.warn('[Storage.deleteScan] Backend delete failed:', res.status);
     } catch (e) {
-      console.warn("Failed to sync delete to MongoDB Atlas:", e);
+      console.warn('[Storage.deleteScan] Failed to sync delete:', e.message);
     }
   },
 
   async clearHistory() {
-    // 1. Clear locally first
     this.clearLocalHistory();
-    
-    // 2. Sync with MongoDB
     try {
-      const res = await fetch(API_URL + '/api/scans', { method: 'DELETE' });
-      if (!res.ok) console.warn("Failed to clear scans on MongoDB backend");
+      const headers = window.Auth ? Auth.getAuthHeaders() : {};
+      const res = await fetch(API_URL + '/api/scans', { method: 'DELETE', headers });
+      if (!res.ok) console.warn('[Storage.clearHistory] Backend clear failed:', res.status);
     } catch (e) {
-      console.warn("Failed to sync clear to MongoDB Atlas:", e);
+      console.warn('[Storage.clearHistory] Failed to sync clear:', e.message);
     }
   },
 
-  getFeedback() { try { return JSON.parse(localStorage.getItem(this.FEEDBACK_KEY) || "[]"); } catch { return []; } },
+  getFeedback() { try { return JSON.parse(localStorage.getItem(this.FEEDBACK_KEY) || '[]'); } catch { return []; } },
   addFeedback(entry) {
     const f = this.getFeedback();
     f.unshift({ id: Date.now(), ...entry });
@@ -127,7 +137,7 @@ const AILoader = {
 
 // ── PAGE ROUTER ────────────────────────────────
 const Router = {
-  pages: ["home", "history", "analytics", "feedback"],
+  pages: ["home", "history", "analytics", "feedback", "profile"],
   current: "home",
   navigate(page) {
     this.pages.forEach(p => {
@@ -143,6 +153,7 @@ const Router = {
     if (page === "history") HistoryManager.render();
     if (page === "analytics") Analytics.render();
     if (page === "feedback") Feedback.render();
+    if (page === "profile") ProfilePage.render();
   }
 };
 
@@ -246,34 +257,59 @@ const PDF = {
 // ── HISTORY MANAGER ────────────────────────────
 const HistoryManager = {
   async render() {
-    const grid = document.getElementById("history-grid");
-    const empty = document.getElementById("history-empty");
-    const meta = document.getElementById("history-meta");
+    const grid  = document.getElementById('history-grid');
+    const empty = document.getElementById('history-empty');
+    const meta  = document.getElementById('history-meta');
     const items = await Storage.getHistory();
+
+    console.log('[HistoryManager.render] items:', items.length,
+                '| loggedIn:', window.Auth ? Auth.isLoggedIn() : false);
+
     if (!items.length) {
-      grid.innerHTML = ""; empty.classList.remove("hidden"); meta.textContent = "";
+      grid.innerHTML = '';
+      // Context-aware empty state
+      if (window.Auth && Auth.isLoggedIn()) {
+        empty.querySelector('p').textContent =
+          'Scan a plant image while logged in to save scans to your account.';
+      } else {
+        empty.querySelector('p').textContent =
+          'Your scan history will appear here after you analyze your first plant image.';
+      }
+      empty.classList.remove('hidden');
+      meta.textContent = '';
       return;
     }
-    empty.classList.add("hidden");
-    meta.textContent = `${items.length} scan${items.length !== 1 ? "s" : ""} saved`;
+
+    empty.classList.add('hidden');
+    meta.textContent = `${items.length} scan${items.length !== 1 ? 's' : ''} saved`;
+
+    const riskColor = { HIGH: 'sev-high', MEDIUM: 'sev-medium', LOW: 'sev-low' };
+
     grid.innerHTML = items.map(item => {
       const imgPart = item.imageDataUrl
         ? `<img class="history-card-img" src="${item.imageDataUrl}" alt="${item.disease}" loading="lazy">`
         : `<div class="history-card-img-placeholder">🌿</div>`;
-      const sevCls = item.severity === "HIGH" ? "sev-high" : item.severity === "MEDIUM" ? "sev-medium" : "sev-low";
-      
+      const sevCls = item.severity === 'HIGH' ? 'sev-high' : item.severity === 'MEDIUM' ? 'sev-medium' : 'sev-low';
+      const rl     = item.riskLevel || '';
+      const riskBadge = rl
+        ? `<span class="severity-badge ${riskColor[rl] || 'sev-low'}" title="Spread Risk">${rl} RISK</span>`
+        : '';
+
       // Support both MongoDB ISO string timestamp and local millisecond ID
       const timestampSource = item.timestamp || item.id;
-      const date = isNaN(Number(timestampSource)) ? new Date(timestampSource).toLocaleString() : new Date(Number(timestampSource)).toLocaleString();
-      
+      const date = isNaN(Number(timestampSource))
+        ? new Date(timestampSource).toLocaleString()
+        : new Date(Number(timestampSource)).toLocaleString();
+
       return `<div class="history-card" id="hcard-${item.id}">
         ${imgPart}
         <div class="history-card-body">
           <div class="history-card-disease">${item.disease}</div>
           <div class="history-card-row">
-            <span class="severity-badge ${sevCls}">${item.severity || "N/A"}</span>
-            <span class="confidence-value">${item.confidence ? item.confidence + "%" : "—"}</span>
+            <span class="severity-badge ${sevCls}">${item.severity || 'N/A'}</span>
+            <span class="confidence-value">${item.confidence ? item.confidence + '%' : '—'}</span>
           </div>
+          ${riskBadge ? `<div class="history-card-row" style="margin-top:4px">${riskBadge}</div>` : ''}
           <div class="history-card-time">${date}</div>
         </div>
         <div class="history-card-footer">
@@ -281,7 +317,7 @@ const HistoryManager = {
           <button class="history-delete-btn" onclick="HistoryManager.delete('${item.id}')">🗑️ Delete</button>
         </div>
       </div>`;
-    }).join("");
+    }).join('');
   },
   async delete(id) {
     await Storage.deleteScan(id);
@@ -296,79 +332,339 @@ const HistoryManager = {
   }
 };
 
-// ── ANALYTICS ──────────────────────────────────
+// ── ANALYTICS (Phase 1B Enhanced) ─────────────────────────
 const Analytics = {
   charts: {},
   async render() {
     const items = await Storage.getHistory();
-    const empty = document.getElementById("analytics-empty");
-    if (!items.length) { empty.classList.remove("hidden"); return; }
-    empty.classList.add("hidden");
-    const diseased = items.filter(i => i.isHealthy === false);
-    const healthy = items.filter(i => i.isHealthy === true);
-    document.getElementById("kpi-total").textContent = items.length;
-    document.getElementById("kpi-diseased").textContent = diseased.length;
-    document.getElementById("kpi-healthy").textContent = healthy.length;
+    const empty = document.getElementById('analytics-empty');
+
+    // Try to load live dashboard stats for authenticated users
+    let dashStats = null;
+    if (window.Auth && Auth.isLoggedIn()) {
+      try {
+        const res = await fetch(API_URL + '/api/dashboard', {
+          headers: { ...Auth.getAuthHeaders() }
+        });
+        if (res.ok) dashStats = await res.json();
+      } catch (_) {}
+    }
+
+    const total    = dashStats ? dashStats.totalScans    : items.length;
+    const diseased = dashStats ? dashStats.diseasedPlants: items.filter(i => !i.isHealthy).length;
+    const healthy  = dashStats ? dashStats.healthyPlants : items.filter(i => i.isHealthy).length;
+
+    if (!total && !items.length) { empty?.classList.remove('hidden'); return; }
+    empty?.classList.add('hidden');
+
+    // KPI cards
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setEl('kpi-total',    total);
+    setEl('kpi-diseased', diseased);
+    setEl('kpi-healthy',  healthy);
+
+    // Top disease
     const freq = {};
-    diseased.forEach(i => { freq[i.disease] = (freq[i.disease] || 0) + 1; });
-    const topDisease = Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || "—";
-    document.getElementById("kpi-top").textContent = topDisease;
-    this.renderDonut(healthy.length, diseased.length);
-    this.renderBar(freq);
+    items.filter(i => !i.isHealthy).forEach(i => { freq[i.disease] = (freq[i.disease] || 0) + 1; });
+    const topDisease = dashStats?.topDisease || Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || '—';
+    setEl('kpi-top', topDisease !== '—' ? topDisease.split('___').pop().replace(/_/g, ' ') : '—');
+
+    // High risk count
+    const highRisk = dashStats?.riskBreakdown?.HIGH ?? items.filter(i => i.riskLevel === 'HIGH').length;
+    setEl('kpi-high-risk', highRisk);
+
+    // Last scan date
+    if (dashStats?.lastScan?.date || items.length) {
+      const lastDate = dashStats?.lastScan?.date || items[0]?.timestamp;
+      setEl('kpi-last-scan', lastDate ? new Date(lastDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—');
+    }
+
+    // Charts
+    this.renderDonut(healthy, diseased);
+    this.renderBar(freq, items);
     this.renderLine(items);
+    this.renderRisk(dashStats?.riskBreakdown, items);
+
+    // Activity timeline
+    const activity = dashStats?.recentActivity || items.slice(0, 10).map(i => ({
+      id: i.id, disease: i.disease, isHealthy: i.isHealthy,
+      severity: i.severity, riskLevel: i.riskLevel || 'LOW', date: i.timestamp,
+    }));
+    this.renderActivity(activity);
   },
+
   destroy(id) { if (this.charts[id]) { this.charts[id].destroy(); delete this.charts[id]; } },
+
   chartDefaults() {
-    return { color: "#e2e8f0", borderColor: "rgba(255,255,255,0.1)",
-      plugins: { legend: { labels: { color: "#94a3b8", font: { family: "Inter" } } } },
-      scales: { x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.06)" } },
-                y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(255,255,255,0.06)" } } }
+    return {
+      color: '#e2e8f0', borderColor: 'rgba(255,255,255,0.1)',
+      plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Inter' } } } },
+      scales: {
+        x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } }
+      }
     };
   },
+
   renderDonut(h, d) {
-    this.destroy("donut");
-    const ctx = document.getElementById("chart-donut");
+    this.destroy('donut');
+    const ctx = document.getElementById('chart-donut');
     if (!ctx) return;
     this.charts.donut = new Chart(ctx, {
-      type: "doughnut",
-      data: { labels: ["Healthy", "Diseased"], datasets: [{ data: [h || 0, d || 0], backgroundColor: ["rgba(16,185,129,0.7)", "rgba(239,68,68,0.7)"], borderColor: ["rgba(16,185,129,1)", "rgba(239,68,68,1)"], borderWidth: 2 }] },
-      options: { plugins: { legend: { labels: { color: "#94a3b8" } } }, cutout: "65%" }
+      type: 'doughnut',
+      data: { labels: ['Healthy', 'Diseased'], datasets: [{ data: [h || 0, d || 0], backgroundColor: ['rgba(16,185,129,0.7)', 'rgba(239,68,68,0.7)'], borderColor: ['rgba(16,185,129,1)', 'rgba(239,68,68,1)'], borderWidth: 2 }] },
+      options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '65%', responsive: true, maintainAspectRatio: false }
     });
   },
-  renderBar(freq) {
-    this.destroy("bar");
-    const ctx = document.getElementById("chart-bar");
+
+  renderBar(freq, items) {
+    this.destroy('bar');
+    const ctx = document.getElementById('chart-bar');
     if (!ctx) return;
-    const labels = Object.keys(freq).slice(0, 8).map(k => k.length > 16 ? k.slice(0, 16) + "…" : k);
+    // Build frequency if not provided
+    if (!Object.keys(freq).length && items.length) {
+      items.filter(i => !i.isHealthy).forEach(i => { freq[i.disease] = (freq[i.disease] || 0) + 1; });
+    }
+    const labels = Object.keys(freq).slice(0, 8).map(k => k.split('___').pop().replace(/_/g, ' ').slice(0, 16));
     const values = Object.values(freq).slice(0, 8);
     const def = this.chartDefaults();
     this.charts.bar = new Chart(ctx, {
-      type: "bar",
-      data: { labels, datasets: [{ label: "Occurrences", data: values, backgroundColor: "rgba(124,58,237,0.6)", borderColor: "rgba(124,58,237,1)", borderWidth: 1, borderRadius: 6 }] },
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Occurrences', data: values, backgroundColor: 'rgba(124,58,237,0.6)', borderColor: 'rgba(124,58,237,1)', borderWidth: 1, borderRadius: 6 }] },
       options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
     });
   },
+
   renderLine(items) {
-    this.destroy("line");
-    const ctx = document.getElementById("chart-line");
+    this.destroy('line');
+    const ctx = document.getElementById('chart-line');
     if (!ctx) return;
     const days = {}; const now = Date.now();
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now - i * 86400000);
-      days[d.toLocaleDateString("en", { month: "short", day: "numeric" })] = 0;
+      days[d.toLocaleDateString('en', { month: 'short', day: 'numeric' })] = 0;
     }
     items.forEach(item => {
       const ts = item.timestamp || item.id;
       const parsedTs = isNaN(Number(ts)) ? ts : Number(ts);
-      const d = new Date(parsedTs).toLocaleDateString("en", { month: "short", day: "numeric" });
+      const d = new Date(parsedTs).toLocaleDateString('en', { month: 'short', day: 'numeric' });
       if (d in days) days[d]++;
     });
     const def = this.chartDefaults();
     this.charts.line = new Chart(ctx, {
-      type: "line",
-      data: { labels: Object.keys(days), datasets: [{ label: "Scans", data: Object.values(days), borderColor: "rgba(16,185,129,1)", backgroundColor: "rgba(16,185,129,0.1)", borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: "rgba(16,185,129,1)" }] },
+      type: 'line',
+      data: { labels: Object.keys(days), datasets: [{ label: 'Scans', data: Object.values(days), borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: 'rgba(16,185,129,1)' }] },
       options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
     });
+  },
+
+  renderRisk(breakdown, items) {
+    this.destroy('risk');
+    const ctx = document.getElementById('chart-risk');
+    if (!ctx) return;
+    let high = 0, medium = 0, low = 0;
+    if (breakdown) { high = breakdown.HIGH || 0; medium = breakdown.MEDIUM || 0; low = breakdown.LOW || 0; }
+    else { items.forEach(i => { if (i.riskLevel === 'HIGH') high++; else if (i.riskLevel === 'MEDIUM') medium++; else low++; }); }
+    this.charts.risk = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{ data: [high, medium, low],
+          backgroundColor: ['rgba(239,68,68,0.7)', 'rgba(245,158,11,0.7)', 'rgba(16,185,129,0.7)'],
+          borderColor:     ['rgba(239,68,68,1)',   'rgba(245,158,11,1)',   'rgba(16,185,129,1)'],
+          borderWidth: 1, borderRadius: 8 }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+                  y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.06)' } } },
+        responsive: true, maintainAspectRatio: false
+      }
+    });
+  },
+
+  renderActivity(activity) {
+    const section = document.getElementById('activity-section');
+    const list    = document.getElementById('activity-list');
+    if (!section || !list || !activity?.length) return;
+    section.style.display = 'block';
+    const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+    list.innerHTML = activity.map(a => `
+      <div class="activity-item">
+        <div class="activity-dot ${a.isHealthy ? 'healthy' : 'diseased'}"></div>
+        <div class="activity-info">
+          <div class="activity-disease">${(a.disease || 'Unknown').split('___').pop().replace(/_/g, ' ')}</div>
+          <div class="activity-date">${fmt(a.date)}</div>
+        </div>
+        <span class="activity-risk ${a.riskLevel || 'LOW'}">${a.riskLevel || 'LOW'}</span>
+      </div>`).join('');
+  }
+};
+
+// ── WEATHER MODULE (Phase 1C + Bug #2 Geolocation Fix) ──────
+const Weather = {
+  _refreshInterval: null,
+  _usingCoords: false,
+
+  // Load by city name
+  async load(city) {
+    city = (city || '').trim() || (document.getElementById('weather-city-input') || {}).value || 'Bhopal';
+    console.log('[Weather] Loading city:', city);
+    try {
+      const res  = await fetch(`${API_URL}/api/weather?city=${encodeURIComponent(city)}`);
+      const data = await res.json();
+      this._usingCoords = false;
+      this.render(data);
+    } catch (e) {
+      console.warn('[Weather] City load failed:', e.message);
+    }
+  },
+
+  // Load by GPS coordinates (Bug #2 fix)
+  async loadByCoords(lat, lon) {
+    console.log('[Weather] Loading by coords:', lat, lon);
+    try {
+      const res  = await fetch(`${API_URL}/api/weather?lat=${lat}&lon=${lon}`);
+      const data = await res.json();
+      this._usingCoords = true;
+      // Update city input to show detected city name
+      const input = document.getElementById('weather-city-input');
+      if (input && data.city && data.city !== 'Your Location') input.value = data.city;
+      this.render(data);
+    } catch (e) {
+      console.warn('[Weather] Coords load failed, falling back to Bhopal:', e.message);
+      this.load('Bhopal');
+    }
+  },
+
+  // Request browser geolocation, fallback to Bhopal
+  getCurrentLocationWeather() {
+    if (!navigator.geolocation) {
+      console.log('[Weather] Geolocation not supported, using Bhopal');
+      this.load('Bhopal');
+      return;
+    }
+    console.log('[Weather] Requesting geolocation...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        console.log('[Weather] GPS acquired:', latitude, longitude);
+        this.loadByCoords(latitude, longitude);
+      },
+      (err) => {
+        console.log('[Weather] Geolocation denied/failed:', err.message, '— using Bhopal');
+        this.load('Bhopal');
+      },
+      { timeout: 8000, maximumAge: 300000 }
+    );
+  },
+
+  render(data) {
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+    // Location label
+    const locEl = document.getElementById('weather-location');
+    if (locEl) {
+      locEl.textContent = data.coordBased
+        ? (data.city && data.city !== 'Your Location' ? `📍 ${data.city}` : '📍 Current Location')
+        : (data.city || 'Unknown');
+    }
+
+    setEl('w-temp',      data.temperature !== undefined ? data.temperature + '°C'    : '—');
+    setEl('w-humid',     data.humidity    !== undefined ? data.humidity    + '%'      : '—');
+    setEl('w-rain',      data.rainChance  !== undefined ? data.rainChance  + '%'      : '—');
+    setEl('w-wind',      data.windSpeed   !== undefined ? data.windSpeed   + ' km/h'  : '—');
+    setEl('w-condition', data.condition   || '—');
+    setEl('weather-updated', (data.coordBased ? '📍 Using Current Location • ' : '') +
+      'Updated: ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }));
+
+    const badge = document.getElementById('weather-source-badge');
+    if (badge) {
+      if (data.coordBased) {
+        badge.textContent = data.source === 'live' ? '📍 Live Location' : '📍 Location (Sim)';
+        badge.className   = 'weather-source-badge' + (data.source === 'live' ? '' : ' simulated');
+      } else {
+        badge.textContent = data.source === 'live' ? 'Live' : 'Simulated';
+        badge.className   = 'weather-source-badge' + (data.source === 'live' ? '' : ' simulated');
+      }
+    }
+
+    this.renderInsights(data.insights || []);
+  },
+
+  renderInsights(insights) {
+    const list = document.getElementById('insights-list');
+    if (!list) return;
+    if (!insights.length) { list.innerHTML = '<div class="insight-loading">No insights available.</div>'; return; }
+    list.innerHTML = insights.map(ins => `
+      <div class="insight-item ${ins.level}">
+        <span class="insight-icon">${ins.icon || '🌿'}</span>
+        <span>${ins.message}</span>
+      </div>`).join('');
+  },
+
+  init() {
+    const btn   = document.getElementById('weather-refresh-btn');
+    const input = document.getElementById('weather-city-input');
+    if (btn)   btn.addEventListener('click', () => this.load(input?.value));
+    if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.load(input.value); });
+
+    // Bug #2 fix: Auto-detect location on load
+    this.getCurrentLocationWeather();
+
+    // Auto-refresh every 30 min (use coords if we have them, else city)
+    this._refreshInterval = setInterval(() => {
+      if (this._usingCoords) {
+        this.getCurrentLocationWeather();
+      } else {
+        this.load(input?.value || 'Bhopal');
+      }
+    }, 30 * 60 * 1000);
+  }
+};
+
+// ── RISK CARD (Phase 1E) ────────────────────────────────────
+const RiskCard = {
+  show(riskLevel, riskScore, riskReason, weatherSnap) {
+    const card   = document.getElementById('risk-card');
+    const badge  = document.getElementById('risk-badge');
+    const label  = document.getElementById('risk-score-label');
+    const ring   = document.getElementById('risk-ring-fg');
+    const reason = document.getElementById('risk-reason');
+    const snap   = document.getElementById('risk-weather-snap');
+    if (!card) return;
+
+    card.classList.remove('hidden', 'risk-high', 'risk-medium', 'risk-low');
+    const rl = (riskLevel || 'LOW').toLowerCase();
+    card.classList.add('risk-' + rl);
+
+    if (badge) {
+      badge.textContent = riskLevel || 'LOW';
+      badge.className   = 'risk-badge ' + rl;
+    }
+
+    const score = Math.min(100, Math.max(0, riskScore || 0));
+    if (label) label.textContent = score + '%';
+    if (ring) {
+      const circumference = 201;
+      const offset = circumference - (circumference * score / 100);
+      ring.style.strokeDashoffset = offset;
+      const colors = { high: '#ef4444', medium: '#f59e0b', low: '#10b981' };
+      ring.style.stroke = colors[rl] || '#7c3aed';
+    }
+    if (reason) reason.textContent = riskReason || 'Analysis complete.';
+
+    if (snap && weatherSnap) {
+      snap.innerHTML = `
+        <span class="risk-snap-pill">🌡️ ${weatherSnap.temperature || '—'}°C</span>
+        <span class="risk-snap-pill">💧 ${weatherSnap.humidity || '—'}%</span>
+        <span class="risk-snap-pill">🌧️ ${weatherSnap.rainChance || '—'}% rain</span>`;
+    }
+  },
+
+  hide() {
+    const card = document.getElementById('risk-card');
+    if (card) card.classList.add('hidden');
   }
 };
 
@@ -491,9 +787,151 @@ uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.clas
 imageUploader.addEventListener('change', () => { if (imageUploader.files[0]) handleFile(imageUploader.files[0]); });
 function handleFile(file) { currentFile = file; urlUploader.value = ''; const reader = new FileReader(); reader.onload = (e) => { imagePreview.innerHTML = '<img src=' + e.target.result + ' alt=Preview>'; imagePreview.style.display = 'block'; }; reader.readAsDataURL(file); if (uploadLabel) uploadLabel.textContent = file.name; }
 urlUploader.addEventListener('input', () => { const url = urlUploader.value.trim(); if (url) { currentFile = null; imageUploader.value = ''; if (uploadLabel) uploadLabel.textContent = 'Click to upload or drag & drop'; imagePreview.innerHTML = '<img src=' + url + ' alt=Preview onerror=this.parentElement.style.display=\'none\'>'; imagePreview.style.display = 'block'; } else { imagePreview.innerHTML = ''; imagePreview.style.display = 'none'; } });
-predictButton.addEventListener('click', async () => { const imageUrl = urlUploader.value.trim(); let requestBody, requestHeaders = {}; if (currentFile) { const fd = new FormData(); fd.append('file', currentFile); requestBody = fd; } else if (imageUrl) { requestBody = JSON.stringify({ url: imageUrl }); requestHeaders['Content-Type'] = 'application/json'; } else { Toast.show('Please choose an image file or paste a URL.', 'error'); return; } setLoading(true); AILoader.show(); preventionCard.classList.add('hidden'); resultsDiv.classList.add('hidden'); chatContainer.classList.add('hidden'); try { const res = await fetch(API_URL + '/predict', { method: 'POST', headers: requestHeaders, body: requestBody }); if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Prediction failed'); } const data = await res.json(); AILoader.hide(); displayPrediction(data); chatContext = { ...chatContext, disease: data.disease_name, symptoms: data.symptoms, treatment: data.treatment, prevention: data.prevention }; chatBox.innerHTML = ''; addMessageToChat('Welcome! I detected **' + data.disease_name + '**.\n\nAsk me about:\n- **Symptoms**\n- **Treatment**\n- **Prevention**\n\n_I am here to help!_', 'bot'); } catch (err) { AILoader.hide(); Toast.show('Error: ' + err.message, 'error'); preventionCard.classList.remove('hidden'); } finally { setLoading(false); } });
-function setLoading(on) { const lbl = predictButton.querySelector('.btn-label'), sp = document.getElementById('btn-spinner'); predictButton.disabled = on; if (lbl) lbl.textContent = on ? 'Analyzing...' : 'Analyze Image'; if (sp) sp.classList.toggle('hidden', !on); predictButton.classList.toggle('loading', on); }
-function displayPrediction(data) { predictionOutput.textContent = data.disease_name; symptomsOutput.innerHTML = (data.symptoms || '').replace(/\n/g, '<br>'); treatmentOutput.innerHTML = (data.treatment || '').replace(/\n/g, '<br>'); preventionOutput.innerHTML = (data.prevention || '').replace(/\n/g, '<br>'); const isHealthy = data.prediction.includes('healthy'); const confidence = typeof data.confidence === 'number' ? data.confidence : (isHealthy ? 97 : 92); const sev = Severity.get(confidence); const bar = document.getElementById('confidence-bar'), val = document.getElementById('confidence-value'), badge = document.getElementById('severity-badge'), warn = document.getElementById('severity-warning'); if (bar) setTimeout(() => { bar.style.width = confidence + '%'; }, 300); if (val) val.textContent = confidence + '%'; if (isHealthy) { predictionOutput.classList.add('healthy'); symptomsSection.classList.add('hidden'); treatmentSection.classList.add('hidden'); preventionTitle.textContent = 'How to Keep it Healthy'; if (badge) { badge.textContent = 'Healthy'; badge.className = 'severity-badge sev-low'; } if (warn) warn.classList.add('hidden'); } else { predictionOutput.classList.remove('healthy'); symptomsSection.classList.remove('hidden'); treatmentSection.classList.remove('hidden'); preventionTitle.textContent = 'Prevention'; if (badge) { badge.textContent = sev.label; badge.className = 'severity-badge ' + sev.cls; } if (warn) warn.classList.toggle('hidden', sev.cls !== 'sev-high'); } resultsDiv.classList.remove('hidden'); chatContainer.classList.remove('hidden'); resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' }); const imgEl = document.querySelector('#image-preview img'); let imageDataUrl = null; if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) imageDataUrl = imgEl.src; lastResult = { id: data.id, imageDataUrl, disease: data.disease_name, confidence, severity: isHealthy ? 'LOW' : (sev.cls === 'sev-high' ? 'HIGH' : sev.cls === 'sev-medium' ? 'MEDIUM' : 'LOW'), isHealthy }; Storage.addScan(lastResult); Toast.show('Scan saved: ' + data.disease_name + ' (' + confidence + '%)', 'success'); }
+predictButton.addEventListener('click', async () => {
+  const imageUrl = urlUploader.value.trim();
+  let requestBody;
+
+  // ── Build request body ──────────────────────────────────────
+  if (currentFile) {
+    const fd = new FormData();
+    fd.append('file', currentFile);
+    requestBody = fd;
+  } else if (imageUrl) {
+    requestBody = JSON.stringify({ url: imageUrl });
+  } else {
+    Toast.show('Please choose an image file or paste a URL.', 'error');
+    return;
+  }
+
+  // ── CRITICAL FIX: Always inject JWT into /predict headers ──
+  // Without this, get_optional_user_id() on the backend returns None
+  // and every scan is saved without a userId (into the guest pool).
+  const authHeaders = window.Auth ? Auth.getAuthHeaders() : {};
+  const requestHeaders = { ...authHeaders };
+  if (typeof requestBody === 'string') {
+    requestHeaders['Content-Type'] = 'application/json';
+  }
+  // NOTE: Do NOT set Content-Type for FormData — browser sets it with boundary automatically.
+
+  console.log('[Predict] isLoggedIn:', window.Auth ? Auth.isLoggedIn() : false,
+              '| JWT present:', !!authHeaders['Authorization']);
+
+  setLoading(true);
+  AILoader.show();
+  preventionCard.classList.add('hidden');
+  resultsDiv.classList.add('hidden');
+  chatContainer.classList.add('hidden');
+
+  try {
+    const res = await fetch(API_URL + '/predict', {
+      method: 'POST',
+      headers: requestHeaders,
+      body: requestBody,
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Prediction failed');
+    }
+    const data = await res.json();
+    console.log('[Predict] Response | id:', data.id, '| disease:', data.disease_name,
+                '| riskLevel:', data.riskLevel);
+
+    AILoader.hide();
+    displayPrediction(data);
+
+    chatContext = { ...chatContext, disease: data.disease_name,
+      symptoms: data.symptoms, treatment: data.treatment, prevention: data.prevention };
+    chatBox.innerHTML = '';
+    addMessageToChat('Welcome! I detected **' + data.disease_name + '**.\n\nAsk me about:\n- **Symptoms**\n- **Treatment**\n- **Prevention**\n\n_I am here to help!_', 'bot');
+
+  } catch (err) {
+    AILoader.hide();
+    Toast.show('Error: ' + err.message, 'error');
+    preventionCard.classList.remove('hidden');
+  } finally {
+    setLoading(false);
+  }
+});
+
+function setLoading(on) {
+  const lbl = predictButton.querySelector('.btn-label');
+  const sp  = document.getElementById('btn-spinner');
+  predictButton.disabled = on;
+  if (lbl) lbl.textContent = on ? 'Analyzing...' : 'Analyze Image';
+  if (sp)  sp.classList.toggle('hidden', !on);
+  predictButton.classList.toggle('loading', on);
+}
+
+function displayPrediction(data) {
+  predictionOutput.textContent = data.disease_name;
+  symptomsOutput.innerHTML   = (data.symptoms  || '').replace(/\n/g, '<br>');
+  treatmentOutput.innerHTML  = (data.treatment || '').replace(/\n/g, '<br>');
+  preventionOutput.innerHTML = (data.prevention|| '').replace(/\n/g, '<br>');
+
+  const isHealthy  = data.prediction.includes('healthy');
+  const confidence = typeof data.confidence === 'number' ? data.confidence : (isHealthy ? 97 : 92);
+  const sev        = Severity.get(confidence);
+
+  const bar   = document.getElementById('confidence-bar');
+  const val   = document.getElementById('confidence-value');
+  const badge = document.getElementById('severity-badge');
+  const warn  = document.getElementById('severity-warning');
+
+  if (bar) setTimeout(() => { bar.style.width = confidence + '%'; }, 300);
+  if (val) val.textContent = confidence + '%';
+
+  if (isHealthy) {
+    predictionOutput.classList.add('healthy');
+    symptomsSection.classList.add('hidden');
+    treatmentSection.classList.add('hidden');
+    preventionTitle.textContent = 'How to Keep it Healthy';
+    if (badge) { badge.textContent = 'Healthy'; badge.className = 'severity-badge sev-low'; }
+    if (warn)  warn.classList.add('hidden');
+  } else {
+    predictionOutput.classList.remove('healthy');
+    symptomsSection.classList.remove('hidden');
+    treatmentSection.classList.remove('hidden');
+    preventionTitle.textContent = 'Prevention';
+    if (badge) { badge.textContent = sev.label; badge.className = 'severity-badge ' + sev.cls; }
+    if (warn)  warn.classList.toggle('hidden', sev.cls !== 'sev-high');
+  }
+
+  resultsDiv.classList.remove('hidden');
+  chatContainer.classList.remove('hidden');
+  resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // ── Build lastResult for PDF generation ────────────────────
+  const imgEl = document.querySelector('#image-preview img');
+  const imageDataUrl = (imgEl && imgEl.src && imgEl.src.startsWith('data:')) ? imgEl.src : null;
+  lastResult = {
+    id:           data.id,
+    imageDataUrl,
+    disease:      data.disease_name,
+    confidence,
+    severity:     isHealthy ? 'LOW' : (sev.cls === 'sev-high' ? 'HIGH' : sev.cls === 'sev-medium' ? 'MEDIUM' : 'LOW'),
+    isHealthy,
+    riskLevel:    data.riskLevel,
+    riskScore:    data.riskScore,
+    timestamp:    new Date().toISOString(),
+  };
+
+  // ── CRITICAL FIX: Do NOT call Storage.addScan() (localStorage) ─────────
+  // The scan was already persisted in MongoDB by the /predict backend route.
+  // Calling addScan() here was the reason scans appeared in guest mode after logout
+  // (localStorage had no userId concept). The server is now the single source of truth.
+  // We still update localStorage cache so offline mode and PDF still work.
+  Storage.addLocalScan(lastResult);
+
+  const scanLabel = isHealthy ? 'Healthy scan' : data.disease_name;
+  Toast.show('Scan saved: ' + scanLabel + ' (' + confidence + '%)', 'success');
+
+  // Show risk card
+  if (data.riskLevel) {
+    RiskCard.show(data.riskLevel, data.riskScore, data.riskReason, null);
+  } else {
+    RiskCard.hide();
+  }
+}
 document.getElementById('download-pdf-btn') && document.getElementById('download-pdf-btn').addEventListener('click', () => PDF.generate());
 document.getElementById('save-history-manual-btn') && document.getElementById('save-history-manual-btn').addEventListener('click', () => { if (lastResult) { Storage.addScan(lastResult); Toast.show('Saved!', 'success'); } else Toast.show('No result yet.', 'info'); });
 document.getElementById('clear-all-btn') && document.getElementById('clear-all-btn').addEventListener('click', () => HistoryManager.clearAll());
@@ -503,5 +941,78 @@ async function sendChatMessage() { const message = chatInput.value.trim(); if (!
 function showLocalModeBadge() { const b = document.getElementById('local-mode-badge'); if (b) b.classList.remove('hidden'); }
 function createTypingIndicator() { const w = document.createElement('div'); w.classList.add('chat-msg','bot','typing-indicator'); w.innerHTML = '<span class=typing-label>Expert is thinking</span><span class=dots><span></span><span></span><span></span></span>'; return w; }
 function addMessageToChat(text, sender, isLocalMode = false) { const div = document.createElement('div'); div.classList.add('chat-msg', sender); if (sender === 'bot' && isLocalMode) div.classList.add('local-mode'); let html = text.replace(/\*\*(.*?)\*\*/g,'<strong></strong>').replace(/_(.*?)_/g,'<em></em>').replace(/^[-]\s(.+)/gm,'<li></li>').replace(/(<li>.*<\/li>\n?)+/g,m=>'<ul>'+m+'</ul>').replace(/\n/g,'<br>'); if (sender === 'bot' && isLocalMode) html = '<div class=local-badge>Local Expert Mode</div>' + html; div.innerHTML = html; chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
-Voice.init(); Camera.init(); Feedback.init();
-window.AgroAI = { PDF, Router, Toast, HistoryManager, Analytics, Feedback, Storage };
+// ── PROFILE PAGE ───────────────────────────────
+const ProfilePage = {
+  async render() {
+    if (!window.Auth || !Auth.isLoggedIn()) {
+      // Redirect to home if not logged in
+      Router.navigate('home');
+      if (window.Auth) Auth.showLogin();
+      return;
+    }
+    const user = await Auth.fetchProfile();
+    if (!user) return;
+    const fmt = (iso) => iso ? new Date(iso).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('profile-name',        user.name  || '—');
+    setEl('profile-email',       user.email || '—');
+    setEl('profile-total-scans', user.totalScans ?? 0);
+    setEl('profile-join-date',   fmt(user.createdAt));
+    setEl('profile-last-login',  fmt(user.lastLogin));
+    setEl('profile-account-type', (user.role || 'user').charAt(0).toUpperCase() + (user.role || 'user').slice(1));
+    setEl('profile-role-badge',  (user.role || 'User').toUpperCase());
+    const nameInput = document.getElementById('profile-edit-name');
+    if (nameInput) nameInput.value = user.name || '';
+    // Profile update form
+    const form = document.getElementById('form-profile-update');
+    if (form && !form._bound) {
+      form._bound = true;
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-profile-save');
+        const errEl = document.getElementById('profile-edit-error');
+        const newName = (document.getElementById('profile-edit-name')?.value || '').trim();
+        if (!newName) { errEl.textContent = 'Name cannot be empty.'; errEl.classList.remove('hidden'); return; }
+        btn.disabled = true; btn.textContent = 'Saving…';
+        const res = await Auth.updateProfile({ name: newName });
+        btn.disabled = false; btn.textContent = '💾 Save Changes';
+        if (res.success) {
+          // Update local user cache
+          const u = Auth.getUser(); if (u) { u.name = newName; Auth.login(Auth.getToken(), u); }
+          Toast.show('✅ Profile updated!', 'success');
+          ProfilePage.render();
+        } else {
+          errEl.textContent = res.message || 'Update failed.'; errEl.classList.remove('hidden');
+        }
+      });
+    }
+  }
+};
+
+Voice.init(); Camera.init(); Feedback.init(); Weather.init();
+
+// ── Auth Init — guaranteed after full DOM parse ────────────
+if (typeof window.Auth !== 'undefined') {
+  Auth.init();
+} else {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.Auth !== 'undefined') Auth.init();
+  });
+}
+window.AgroAI = { PDF, Router, Toast, HistoryManager, Analytics, Feedback, Storage, ProfilePage, Weather, RiskCard };
+
+// Re-render data pages on auth changes (login/logout)
+document.addEventListener('agroai:auth', (e) => {
+  console.log('[agroai:auth] Auth event fired:', e.detail.type);
+  if (e.detail.type === 'logout') {
+    // Clear ALL local caches so next guest session is clean
+    Storage.clearLocalHistory();
+    console.log('[agroai:auth] Local history cleared on logout');
+  }
+  // Always re-render whatever page is active, so data refreshes immediately
+  const page = Router.current;
+  console.log('[agroai:auth] Re-rendering page:', page);
+  if (page === 'history')   HistoryManager.render();
+  if (page === 'analytics') Analytics.render();
+  if (page === 'profile')   ProfilePage.render();
+});

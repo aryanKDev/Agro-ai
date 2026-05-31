@@ -4,6 +4,7 @@ keras
 Pillow
 Flask
 Flask-CORS
+Flask-JWT-Extended
 requests
 python-dotenv
 google-generativeai
@@ -12,3 +13,4 @@ pymongo[srv]
 dnspython
 reportlab
 qrcode[pil]
+bcrypt

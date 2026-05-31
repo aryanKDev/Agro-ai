@@ -1,0 +1,53 @@
+{
+  "Tomato___Early_blight":         { "category": "fungal",    "optimal_temp": [20, 30], "optimal_humidity": 85 },
+  "Tomato___Late_blight":          { "category": "fungal",    "optimal_temp": [10, 25], "optimal_humidity": 90 },
+  "Tomato___Leaf_Mold":            { "category": "fungal",    "optimal_temp": [20, 25], "optimal_humidity": 85 },
+  "Tomato___Septoria_leaf_spot":   { "category": "fungal",    "optimal_temp": [20, 25], "optimal_humidity": 80 },
+  "Tomato___Spider_mites Two-spotted_spider_mite": { "category": "pest", "optimal_temp": [25, 35], "optimal_humidity": 30 },
+  "Tomato___Target_Spot":          { "category": "fungal",    "optimal_temp": [22, 30], "optimal_humidity": 80 },
+  "Tomato___Tomato_mosaic_virus":  { "category": "viral",     "optimal_temp": [20, 35], "optimal_humidity": 50 },
+  "Tomato___Tomato_Yellow_Leaf_Curl_Virus": { "category": "viral", "optimal_temp": [25, 35], "optimal_humidity": 50 },
+  "Tomato___Bacterial_spot":       { "category": "bacterial", "optimal_temp": [25, 35], "optimal_humidity": 80 },
+  "Tomato___healthy":              { "category": "healthy",   "optimal_temp": [20, 30], "optimal_humidity": 60 },
+
+  "Potato___Early_blight":         { "category": "fungal",    "optimal_temp": [20, 29], "optimal_humidity": 80 },
+  "Potato___Late_blight":          { "category": "fungal",    "optimal_temp": [10, 20], "optimal_humidity": 90 },
+  "Potato___healthy":              { "category": "healthy",   "optimal_temp": [15, 25], "optimal_humidity": 60 },
+
+  "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": { "category": "fungal", "optimal_temp": [22, 30], "optimal_humidity": 85 },
+  "Corn_(maize)___Common_rust_":   { "category": "fungal",    "optimal_temp": [16, 23], "optimal_humidity": 75 },
+  "Corn_(maize)___Northern_Leaf_Blight": { "category": "fungal", "optimal_temp": [18, 27], "optimal_humidity": 80 },
+  "Corn_(maize)___healthy":        { "category": "healthy",   "optimal_temp": [18, 32], "optimal_humidity": 60 },
+
+  "Apple___Apple_scab":            { "category": "fungal",    "optimal_temp": [10, 24], "optimal_humidity": 85 },
+  "Apple___Black_rot":             { "category": "fungal",    "optimal_temp": [20, 30], "optimal_humidity": 80 },
+  "Apple___Cedar_apple_rust":      { "category": "fungal",    "optimal_temp": [15, 22], "optimal_humidity": 75 },
+  "Apple___healthy":               { "category": "healthy",   "optimal_temp": [15, 25], "optimal_humidity": 60 },
+
+  "Grape___Black_rot":             { "category": "fungal",    "optimal_temp": [20, 30], "optimal_humidity": 85 },
+  "Grape___Esca_(Black_Measles)":  { "category": "fungal",    "optimal_temp": [25, 35], "optimal_humidity": 70 },
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": { "category": "fungal", "optimal_temp": [20, 28], "optimal_humidity": 80 },
+  "Grape___healthy":               { "category": "healthy",   "optimal_temp": [18, 30], "optimal_humidity": 60 },
+
+  "Strawberry___Leaf_scorch":      { "category": "fungal",    "optimal_temp": [15, 26], "optimal_humidity": 75 },
+  "Strawberry___healthy":          { "category": "healthy",   "optimal_temp": [15, 25], "optimal_humidity": 60 },
+
+  "Peach___Bacterial_spot":        { "category": "bacterial", "optimal_temp": [20, 30], "optimal_humidity": 80 },
+  "Peach___healthy":               { "category": "healthy",   "optimal_temp": [18, 28], "optimal_humidity": 60 },
+
+  "Pepper,_bell___Bacterial_spot": { "category": "bacterial", "optimal_temp": [22, 30], "optimal_humidity": 80 },
+  "Pepper,_bell___healthy":        { "category": "healthy",   "optimal_temp": [20, 30], "optimal_humidity": 60 },
+
+  "Cherry_(including_sour)___Powdery_mildew": { "category": "fungal", "optimal_temp": [15, 25], "optimal_humidity": 70 },
+  "Cherry_(including_sour)___healthy": { "category": "healthy", "optimal_temp": [15, 25], "optimal_humidity": 60 },
+
+  "Squash___Powdery_mildew":       { "category": "fungal",    "optimal_temp": [20, 30], "optimal_humidity": 70 },
+
+  "Orange___Haunglongbing_(Citrus_greening)": { "category": "bacterial", "optimal_temp": [25, 35], "optimal_humidity": 70 },
+
+  "Soybean___healthy":             { "category": "healthy",   "optimal_temp": [20, 30], "optimal_humidity": 60 },
+
+  "Raspberry___healthy":           { "category": "healthy",   "optimal_temp": [15, 25], "optimal_humidity": 60 },
+
+  "Blueberry___healthy":           { "category": "healthy",   "optimal_temp": [15, 25], "optimal_humidity": 60 }
+}

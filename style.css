@@ -337,3 +337,158 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 @media(max-width:900px){.analytics-kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}.feedback-layout{grid-template-columns:1fr}}
 @media(max-width:640px){.analytics-kpi-grid{grid-template-columns:repeat(2,1fr)}.history-grid{grid-template-columns:1fr}.result-actions{flex-direction:column}.toast-container{left:12px;right:12px;bottom:12px}}
 .nav-links.open{display:flex!important;flex-direction:column;position:absolute;top:64px;left:0;right:0;background:rgba(10,10,15,.97);backdrop-filter:blur(20px);padding:16px 24px;border-bottom:1px solid rgba(255,255,255,.08);gap:4px;z-index:99}
+
+/* ══════════════════════════════════════════════════════════
+   AUTH NAVBAR ADDITIONS
+══════════════════════════════════════════════════════════ */
+.nav-auth-group{display:flex;align-items:center;gap:8px}
+.nav-auth-link{color:var(--text2);text-decoration:none;font-size:.9rem;font-weight:500;padding:8px 16px;border-radius:8px;transition:all .2s}
+.nav-auth-link:hover{color:#fff;background:var(--card)}
+.nav-btn-register{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;text-decoration:none;font-size:.85rem;font-weight:600;padding:7px 16px;border-radius:10px;transition:all .2s;box-shadow:0 0 16px var(--glow-p)}
+.nav-btn-register:hover{transform:translateY(-1px);box-shadow:0 0 26px var(--glow-p)}
+.nav-welcome-pill{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(16,185,129,.15));border:1px solid rgba(124,58,237,.35);color:var(--p2);font-size:.82rem;font-weight:600;padding:6px 14px;border-radius:20px;letter-spacing:.2px}
+.nav-logout-link{color:#f87171;text-decoration:none;font-size:.85rem;font-weight:600;padding:7px 14px;border-radius:8px;transition:all .2s;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.08)}
+.nav-logout-link:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
+
+/* ══════════════════════════════════════════════════════════
+   AUTH MODALS
+══════════════════════════════════════════════════════════ */
+.auth-modal{position:fixed;inset:0;z-index:9998;background:rgba(5,5,10,.75);backdrop-filter:blur(16px);display:none;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s ease}
+.auth-modal.active{display:flex}
+.auth-modal-card{background:linear-gradient(145deg,rgba(20,20,40,.97),rgba(15,15,28,.98));border:1px solid rgba(124,58,237,.25);border-radius:24px;padding:40px;width:100%;max-width:420px;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 60px rgba(124,58,237,.12);animation:modalSlideUp .35s cubic-bezier(.34,1.56,.64,1)}
+.auth-modal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--p),var(--p2),var(--g));border-radius:24px 24px 0 0}
+@keyframes modalSlideUp{from{opacity:0;transform:translateY(40px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.auth-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.auth-modal-close:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35);color:#f87171}
+.auth-modal-logo{font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:800;color:#fff;text-align:center;margin-bottom:12px}
+.auth-modal-title{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:#fff;text-align:center;margin-bottom:6px;letter-spacing:-.5px}
+.auth-modal-sub{color:var(--text2);font-size:.88rem;text-align:center;margin-bottom:28px;line-height:1.5}
+.auth-modal-switch{color:var(--text2);font-size:.85rem;text-align:center;margin-top:20px}
+.auth-modal-switch a{color:var(--p2);text-decoration:none;font-weight:600;transition:color .2s}
+.auth-modal-switch a:hover{color:#c084fc}
+
+/* Auth Form Fields */
+.auth-field{margin-bottom:18px}
+.auth-label{display:block;color:var(--text2);font-size:.8rem;font-weight:600;margin-bottom:7px;letter-spacing:.3px;text-transform:uppercase}
+.auth-input-wrap{position:relative;display:flex;align-items:center}
+.auth-input{width:100%;padding:12px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;color:var(--text);font-size:.92rem;outline:none;transition:all .3s;font-family:'Inter',sans-serif}
+.auth-input:focus{border-color:var(--p);background:rgba(124,58,237,.07);box-shadow:0 0 0 3px rgba(124,58,237,.15)}
+.auth-input::placeholder{color:rgba(148,163,184,.5)}
+.auth-input-wrap .auth-input{padding-right:46px}
+.toggle-password{position:absolute;right:12px;background:none;border:none;cursor:pointer;font-size:1rem;color:var(--text2);transition:color .2s;padding:4px;line-height:1}
+.toggle-password:hover{color:var(--p2)}
+.auth-error{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fca5a5;font-size:.83rem;padding:10px 14px;border-radius:10px;margin-bottom:14px;line-height:1.45}
+.auth-error-shake{animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.auth-btn{width:100%;padding:13px 24px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .3s;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 24px var(--glow-p);position:relative;overflow:hidden;margin-top:4px}
+.auth-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--p2),var(--p));opacity:0;transition:.3s}
+.auth-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 0 40px var(--glow-p)}
+.auth-btn:hover:not(:disabled)::before{opacity:1}
+.auth-btn:disabled{opacity:.65;cursor:not-allowed;transform:none}
+.auth-btn span{position:relative;z-index:1}
+.auth-btn-spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite;flex-shrink:0}
+
+/* ══════════════════════════════════════════════════════════
+   PROFILE PAGE
+══════════════════════════════════════════════════════════ */
+.profile-layout{display:grid;grid-template-columns:280px 1fr;gap:28px;align-items:start}
+.profile-card{padding:36px 28px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.profile-avatar-wrap{position:relative;display:inline-block;margin-bottom:4px}
+.profile-avatar{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--p2),var(--g));display:flex;align-items:center;justify-content:center;font-size:2.8rem;position:relative;z-index:1;box-shadow:0 0 40px var(--glow-p)}
+.profile-avatar-ring{position:absolute;inset:-6px;border-radius:50%;border:2px solid transparent;background:linear-gradient(135deg,var(--p),var(--g)) border-box;-webkit-mask:linear-gradient(#fff 0 0) padding-box,linear-gradient(#fff 0 0);-webkit-mask-composite:destination-out;mask-composite:exclude;animation:ringPulse 3s ease infinite}
+.profile-name{font-family:'Outfit',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;letter-spacing:-.5px}
+.profile-email{color:var(--text2);font-size:.88rem}
+.profile-badge{background:linear-gradient(135deg,rgba(124,58,237,.2),rgba(168,85,247,.15));border:1px solid rgba(124,58,237,.35);color:var(--p2);font-size:.72rem;font-weight:700;padding:5px 14px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.profile-right{display:flex;flex-direction:column;gap:24px}
+.profile-section-title{font-family:'Outfit',sans-serif;font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.profile-stats-card{padding:28px}
+.profile-stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+.profile-stat{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;transition:all .3s}
+.profile-stat:hover{border-color:rgba(124,58,237,.35);transform:translateY(-2px)}
+.profile-stat-icon{font-size:1.8rem;margin-bottom:10px}
+.profile-stat-value{font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:var(--p2);line-height:1;margin-bottom:6px}
+.profile-stat-date{font-size:.9rem}
+.profile-stat-label{color:var(--text2);font-size:.78rem;font-weight:500}
+.profile-edit-card{padding:28px}
+@media(max-width:900px){.profile-layout{grid-template-columns:1fr}.profile-stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.profile-stats-grid{grid-template-columns:1fr}}
+
+/* ══════════════════════════════════════════════════════════
+   PHASE 1C — WEATHER CARD
+══════════════════════════════════════════════════════════ */
+.weather-section{padding:60px 0;position:relative;z-index:1}
+.weather-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.weather-card{padding:28px}
+.weather-card-header{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.weather-location{color:var(--text2);font-size:.82rem;margin-top:2px}
+.weather-source-badge{background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--g2);font-size:.68rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+.weather-source-badge.simulated{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3);color:#93c5fd}
+.weather-city-row{display:flex;gap:10px;margin-bottom:20px}
+.weather-city-input{flex:1;padding:10px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.88rem;outline:none;transition:border-color .3s;font-family:'Inter',sans-serif}
+.weather-city-input:focus{border-color:var(--g);box-shadow:0 0 0 3px rgba(16,185,129,.12)}
+.weather-refresh-btn{padding:10px 16px;background:linear-gradient(135deg,var(--g),var(--g2));border:none;border-radius:10px;color:#fff;font-size:.9rem;cursor:pointer;transition:all .25s;flex-shrink:0}
+.weather-refresh-btn:hover{transform:translateY(-1px);box-shadow:0 0 20px var(--glow-g)}
+.weather-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.weather-metric{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;transition:all .3s}
+.weather-metric:hover{border-color:rgba(16,185,129,.35);transform:translateY(-2px)}
+.weather-metric-icon{font-size:1.5rem;margin-bottom:8px}
+.weather-metric-value{font-family:'Outfit',sans-serif;font-size:1.3rem;font-weight:800;color:var(--g2);line-height:1;margin-bottom:4px}
+.weather-metric-label{color:var(--text2);font-size:.7rem;font-weight:500}
+.weather-condition{text-align:center;color:#fff;font-weight:600;font-size:1rem;padding:10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:10px;margin-bottom:10px}
+.weather-updated{color:var(--text2);font-size:.72rem;text-align:center}
+
+/* ── FARMING INSIGHTS ── */
+.insights-card{padding:28px}
+.insights-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.insight-item{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-radius:12px;border:1px solid;font-size:.87rem;line-height:1.5;animation:fadeIn .4s ease}
+.insight-item.success{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);color:var(--g2)}
+.insight-item.warning{background:rgba(234,179,8,.08);border-color:rgba(234,179,8,.3);color:#fbbf24}
+.insight-item.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#f87171}
+.insight-icon{font-size:1.2rem;flex-shrink:0;margin-top:1px}
+.insight-loading{color:var(--text2);font-size:.88rem;padding:20px 0;text-align:center}
+
+/* ══════════════════════════════════════════════════════════
+   PHASE 1E — RISK ANALYSIS CARD
+══════════════════════════════════════════════════════════ */
+.risk-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-top:16px;animation:fadeIn .5s ease;border-left:3px solid var(--p)}
+.risk-card.risk-high{border-left-color:#ef4444;background:rgba(239,68,68,.06)}
+.risk-card.risk-medium{border-left-color:#f59e0b;background:rgba(245,158,11,.06)}
+.risk-card.risk-low{border-left-color:var(--g);background:rgba(16,185,129,.06)}
+.risk-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.risk-card-title{color:var(--text2);font-size:.85rem;font-weight:600}
+.risk-badge{font-size:.72rem;font-weight:800;padding:5px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.risk-badge.high{background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);color:#f87171}
+.risk-badge.medium{background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);color:#fbbf24}
+.risk-badge.low{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);color:var(--g2)}
+.risk-score-wrap{display:flex;align-items:center;gap:20px}
+.risk-score-ring{position:relative;width:80px;height:80px;flex-shrink:0}
+.risk-ring-svg{width:80px;height:80px;transform:rotate(-90deg)}
+.risk-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:6}
+.risk-ring-fg{fill:none;stroke:var(--p);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .4s}
+.risk-score-label{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Outfit',sans-serif;font-size:1rem;font-weight:800;color:#fff;pointer-events:none}
+.risk-details{flex:1}
+.risk-reason{color:var(--text);font-size:.88rem;line-height:1.5;margin-bottom:8px}
+.risk-weather-snap{display:flex;gap:10px;flex-wrap:wrap}
+.risk-snap-pill{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text2);font-size:.72rem;padding:3px 10px;border-radius:20px}
+
+/* ══════════════════════════════════════════════════════════
+   PHASE 1B — ANALYTICS UPGRADES
+══════════════════════════════════════════════════════════ */
+.analytics-kpi-grid{grid-template-columns:repeat(3,1fr)}
+.kpi-date{font-size:.85rem!important}
+.activity-list{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.activity-item{display:flex;align-items:center;gap:14px;padding:12px 16px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;transition:all .2s}
+.activity-item:hover{border-color:rgba(124,58,237,.35);background:rgba(124,58,237,.04)}
+.activity-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.activity-dot.healthy{background:var(--g2)}
+.activity-dot.diseased{background:#f87171}
+.activity-info{flex:1}
+.activity-disease{font-weight:600;color:#fff;font-size:.88rem}
+.activity-date{color:var(--text2);font-size:.74rem;margin-top:2px}
+.activity-risk{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0}
+.activity-risk.HIGH{background:rgba(239,68,68,.2);color:#f87171}
+.activity-risk.MEDIUM{background:rgba(245,158,11,.2);color:#fbbf24}
+.activity-risk.LOW{background:rgba(16,185,129,.15);color:var(--g2)}
+
+@media(max-width:1100px){.weather-grid{grid-template-columns:1fr}.weather-metrics{grid-template-columns:repeat(2,1fr)}.analytics-kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.weather-metrics{grid-template-columns:repeat(2,1fr)}.analytics-kpi-grid{grid-template-columns:repeat(2,1fr)}.risk-score-wrap{flex-direction:column;align-items:flex-start}}

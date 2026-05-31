@@ -51,6 +51,17 @@
         <a href="#" class="nav-link nav-page-link" data-page="history">📋 History</a>
         <a href="#" class="nav-link nav-page-link" data-page="analytics">📊 Analytics</a>
         <a href="#" class="nav-link nav-page-link" data-page="feedback">⭐ Feedback</a>
+        <!-- GUEST LINKS -->
+        <div class="nav-auth-group" id="nav-guest-links">
+          <a href="#" class="nav-link nav-auth-link" id="btn-nav-login">Login</a>
+          <a href="#" class="nav-btn-register" id="btn-nav-register">Register</a>
+        </div>
+        <!-- AUTH LINKS -->
+        <div class="nav-auth-group hidden" id="nav-auth-links">
+          <span class="nav-welcome-pill" id="nav-welcome-pill">👤 User</span>
+          <a href="#" class="nav-link nav-page-link" data-page="profile" id="btn-nav-profile">Profile</a>
+          <a href="#" class="nav-link nav-logout-link" id="btn-nav-logout">Logout</a>
+        </div>
         <a href="#detector" class="nav-cta-btn" id="nav-cta">Try Free →</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu">
@@ -195,6 +206,29 @@
               <button class="btn-pdf" id="download-pdf-btn">📄 Download AI Report</button>
               <button class="btn-ghost btn-sm" id="save-history-manual-btn">💾 Save to History</button>
             </div>
+
+            <!-- RISK ANALYSIS CARD -->
+            <div class="risk-card hidden" id="risk-card">
+              <div class="risk-card-header">
+                <span class="risk-card-title">🦠 Disease Spread Risk</span>
+                <span class="risk-badge" id="risk-badge">—</span>
+              </div>
+              <div class="risk-score-wrap">
+                <div class="risk-score-ring">
+                  <svg viewBox="0 0 80 80" class="risk-ring-svg">
+                    <circle cx="40" cy="40" r="32" class="risk-ring-bg"/>
+                    <circle cx="40" cy="40" r="32" class="risk-ring-fg" id="risk-ring-fg"
+                            stroke-dasharray="201" stroke-dashoffset="201"/>
+                  </svg>
+                  <div class="risk-score-label" id="risk-score-label">0%</div>
+                </div>
+                <div class="risk-details">
+                  <div class="risk-reason" id="risk-reason">Analyzing conditions...</div>
+                  <div class="risk-weather-snap" id="risk-weather-snap"></div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>
@@ -219,6 +253,64 @@
             <button class="chat-send-button" id="chat-send-button">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
             </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEATHER + INSIGHTS SECTION -->
+    <section class="weather-section" id="weather-section">
+      <div class="section-container">
+        <div class="weather-grid">
+          <!-- Weather Card -->
+          <div class="glass-card weather-card">
+            <div class="weather-card-header">
+              <div class="card-icon-wrap green">🌤️</div>
+              <div style="flex:1">
+                <div class="card-title">Today's Farm Weather</div>
+                <div class="weather-location" id="weather-location">Loading...</div>
+              </div>
+              <span class="weather-source-badge" id="weather-source-badge">Simulated</span>
+            </div>
+            <div class="weather-city-row">
+              <input type="text" id="weather-city-input" class="weather-city-input"
+                     placeholder="Enter city (e.g. Bhopal)" value="Bhopal">
+              <button class="weather-refresh-btn" id="weather-refresh-btn">🔍</button>
+            </div>
+            <div class="weather-metrics" id="weather-metrics">
+              <div class="weather-metric">
+                <div class="weather-metric-icon">🌡️</div>
+                <div class="weather-metric-value" id="w-temp">—</div>
+                <div class="weather-metric-label">Temperature</div>
+              </div>
+              <div class="weather-metric">
+                <div class="weather-metric-icon">💧</div>
+                <div class="weather-metric-value" id="w-humid">—</div>
+                <div class="weather-metric-label">Humidity</div>
+              </div>
+              <div class="weather-metric">
+                <div class="weather-metric-icon">🌧️</div>
+                <div class="weather-metric-value" id="w-rain">—</div>
+                <div class="weather-metric-label">Rain Chance</div>
+              </div>
+              <div class="weather-metric">
+                <div class="weather-metric-icon">🌬️</div>
+                <div class="weather-metric-value" id="w-wind">—</div>
+                <div class="weather-metric-label">Wind Speed</div>
+              </div>
+            </div>
+            <div class="weather-condition" id="w-condition">—</div>
+            <div class="weather-updated" id="weather-updated"></div>
+          </div>
+          <!-- Farming Insights Card -->
+          <div class="glass-card insights-card">
+            <div class="card-header-row">
+              <div class="card-icon-wrap purple">🌾</div>
+              <div class="card-title">Smart Farming Insights</div>
+            </div>
+            <div class="insights-list" id="insights-list">
+              <div class="insight-loading">Loading weather insights...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -305,6 +397,8 @@
           <div class="kpi-card"><div class="kpi-icon">🦠</div><div class="kpi-value" id="kpi-diseased">0</div><div class="kpi-label">Diseases Detected</div></div>
           <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value" id="kpi-healthy">0</div><div class="kpi-label">Healthy Plants</div></div>
           <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" id="kpi-top" style="font-size:0.85rem">—</div><div class="kpi-label">Most Common Disease</div></div>
+          <div class="kpi-card"><div class="kpi-icon">🔴</div><div class="kpi-value" id="kpi-high-risk">0</div><div class="kpi-label">High Risk Scans</div></div>
+          <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value kpi-date" id="kpi-last-scan">—</div><div class="kpi-label">Last Scan</div></div>
         </div>
         <!-- Charts -->
         <div class="charts-grid">
@@ -316,10 +410,19 @@
             <h3 class="chart-title">📊 Disease Distribution</h3>
             <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
           </div>
-          <div class="chart-card glass-card chart-full">
+          <div class="chart-card glass-card">
+            <h3 class="chart-title">⚠️ Risk Distribution</h3>
+            <div class="chart-wrap"><canvas id="chart-risk"></canvas></div>
+          </div>
+          <div class="chart-card glass-card">
             <h3 class="chart-title">📈 Weekly Scan Trend</h3>
             <div class="chart-wrap"><canvas id="chart-line"></canvas></div>
           </div>
+        </div>
+        <!-- Recent Activity Timeline -->
+        <div class="activity-section glass-card" id="activity-section" style="margin-top:24px;padding:28px;display:none">
+          <h3 class="chart-title">🕐 Recent Activity</h3>
+          <div class="activity-list" id="activity-list"></div>
         </div>
         <div class="empty-state hidden" id="analytics-empty">
           <div class="empty-icon">📊</div>
@@ -367,8 +470,136 @@
         </div>
       </div>
     </section>
+  </div><!-- /page-feedback -->
+
+  <!-- ══════════════ PROFILE PAGE ══════════════ -->
+  <div id="page-profile" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+        <div class="inner-page-header">
+          <div class="section-tag">Account</div>
+          <h2 class="section-title">👤 My <span class="gradient-text">Profile</span></h2>
+          <p class="section-sub">Manage your AgroAI account and view your activity</p>
+        </div>
+        <div class="profile-layout">
+          <!-- Profile Card -->
+          <div class="glass-card profile-card">
+            <div class="profile-avatar-wrap">
+              <div class="profile-avatar" id="profile-avatar">👤</div>
+              <div class="profile-avatar-ring"></div>
+            </div>
+            <div class="profile-name" id="profile-name">—</div>
+            <div class="profile-email" id="profile-email">—</div>
+            <div class="profile-badge" id="profile-role-badge">User</div>
+          </div>
+          <!-- Stats & Edit -->
+          <div class="profile-right">
+            <div class="glass-card profile-stats-card">
+              <h3 class="profile-section-title">📊 Account Overview</h3>
+              <div class="profile-stats-grid">
+                <div class="profile-stat">
+                  <div class="profile-stat-icon">🔬</div>
+                  <div class="profile-stat-value" id="profile-total-scans">0</div>
+                  <div class="profile-stat-label">Total Scans</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-icon">📅</div>
+                  <div class="profile-stat-value profile-stat-date" id="profile-join-date">—</div>
+                  <div class="profile-stat-label">Member Since</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-icon">🕐</div>
+                  <div class="profile-stat-value profile-stat-date" id="profile-last-login">—</div>
+                  <div class="profile-stat-label">Last Login</div>
+                </div>
+                <div class="profile-stat">
+                  <div class="profile-stat-icon">🏷️</div>
+                  <div class="profile-stat-value" id="profile-account-type">Free</div>
+                  <div class="profile-stat-label">Account Type</div>
+                </div>
+              </div>
+            </div>
+            <div class="glass-card profile-edit-card">
+              <h3 class="profile-section-title">✏️ Edit Profile</h3>
+              <form id="form-profile-update">
+                <div class="auth-field">
+                  <label class="auth-label">Display Name</label>
+                  <input type="text" id="profile-edit-name" class="auth-input" placeholder="Your full name">
+                </div>
+                <div class="auth-error hidden" id="profile-edit-error"></div>
+                <button type="submit" class="auth-btn" id="btn-profile-save">💾 Save Changes</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div><!-- /page-profile -->
+
+  <!-- ══════════════ LOGIN MODAL ══════════════ -->
+  <div class="auth-modal" id="modal-login" role="dialog" aria-modal="true" aria-label="Login">
+    <div class="auth-modal-card">
+      <button class="auth-modal-close" aria-label="Close">✕</button>
+      <div class="auth-modal-logo">🌿 Agro<span class="logo-accent">AI</span></div>
+      <h2 class="auth-modal-title">Welcome Back</h2>
+      <p class="auth-modal-sub">Sign in to access your personal crop intelligence</p>
+      <form id="form-login" autocomplete="on">
+        <div class="auth-field">
+          <label class="auth-label" for="login-email">Email Address</label>
+          <input type="email" id="login-email" class="auth-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="login-password">Password</label>
+          <div class="auth-input-wrap">
+            <input type="password" id="login-password" class="auth-input" placeholder="Your password" required autocomplete="current-password">
+            <button type="button" class="toggle-password" data-target="login-password" aria-label="Toggle password">👁️</button>
+          </div>
+        </div>
+        <div class="auth-error hidden" id="login-error"></div>
+        <button type="submit" class="auth-btn" id="btn-login-submit">Sign In</button>
+      </form>
+      <p class="auth-modal-switch">Don't have an account? <a href="#" id="link-go-register">Create one →</a></p>
+    </div>
   </div>
 
+  <!-- ══════════════ REGISTER MODAL ══════════════ -->
+  <div class="auth-modal" id="modal-register" role="dialog" aria-modal="true" aria-label="Register">
+    <div class="auth-modal-card">
+      <button class="auth-modal-close" aria-label="Close">✕</button>
+      <div class="auth-modal-logo">🌿 Agro<span class="logo-accent">AI</span></div>
+      <h2 class="auth-modal-title">Create Account</h2>
+      <p class="auth-modal-sub">Join AgroAI and protect your crops with AI</p>
+      <form id="form-register" autocomplete="on">
+        <div class="auth-field">
+          <label class="auth-label" for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" class="auth-input" placeholder="Aryan Kushwaha" required autocomplete="name">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="reg-email">Email Address</label>
+          <input type="email" id="reg-email" class="auth-input" placeholder="you@example.com" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="reg-password">Password</label>
+          <div class="auth-input-wrap">
+            <input type="password" id="reg-password" class="auth-input" placeholder="Min 8 characters" required autocomplete="new-password">
+            <button type="button" class="toggle-password" data-target="reg-password" aria-label="Toggle password">👁️</button>
+          </div>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="reg-confirm">Confirm Password</label>
+          <div class="auth-input-wrap">
+            <input type="password" id="reg-confirm" class="auth-input" placeholder="Repeat your password" required autocomplete="new-password">
+            <button type="button" class="toggle-password" data-target="reg-confirm" aria-label="Toggle password">👁️</button>
+          </div>
+        </div>
+        <div class="auth-error hidden" id="register-error"></div>
+        <button type="submit" class="auth-btn" id="btn-register-submit">Create Account</button>
+      </form>
+      <p class="auth-modal-switch">Already have an account? <a href="#" id="link-go-login">Sign in →</a></p>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
