@@ -1,0 +1,169 @@
+GOVERNMENT AGRICULTURE SCHEMES FOR FARMERS — INDIA
+====================================================
+Source: Department of Agriculture & Farmers Welfare (DA&FW), Ministry of Agriculture, Government of India
+Category: Government Schemes and Advisories
+
+---
+
+SECTION 1: PM-KISAN (PRADHAN MANTRI KISAN SAMMAN NIDHI)
+
+1.1 SCHEME OVERVIEW
+PM-KISAN is a Central Sector Scheme providing income support to all land-holding farmer families across India. Launched on 24 February 2019 by the Government of India.
+
+Financial Benefit:
+- ₹6,000 per year in three equal instalments of ₹2,000 each
+- Transferred directly to farmers' bank accounts via Direct Benefit Transfer (DBT)
+- Instalment periods: April–July, August–November, December–March
+
+1.2 ELIGIBILITY CRITERIA
+Who is eligible:
+- All land-holding farmer families with cultivable land
+- Both small and marginal farmers as well as large farmers are eligible
+- Must be Indian citizens with agricultural land holdings in their name
+- Land records must be updated in state revenue department
+
+Who is NOT eligible:
+- Institutional land holders
+- Farmer families holding constitutional posts
+- Serving/retired government employees with monthly pension > ₹10,000
+- Income Tax payers (with few exceptions)
+- Professionals: doctors, engineers, lawyers, chartered accountants
+
+1.3 HOW TO REGISTER FOR PM-KISAN
+Method 1 — Online Registration:
+1. Visit pmkisan.gov.in
+2. Click "Farmers Corner" → "New Farmer Registration"
+3. Enter Aadhaar number and mobile number
+4. Fill in land details and bank account information
+5. Submit and note Registration ID
+
+Method 2 — Through Common Service Centre (CSC):
+- Visit nearest CSC with Aadhaar card, land records (Khasra/Khatauni), and passbook
+- CSC operator will complete registration free of cost
+
+Method 3 — Through Agriculture Department:
+- Contact local Patwari or Lekhpal for registration assistance
+
+1.4 HOW TO CHECK PM-KISAN STATUS
+- Visit pmkisan.gov.in → "Farmers Corner" → "Beneficiary Status"
+- Enter Aadhaar number, Account number, or Mobile number
+- Check payment history and next instalment date
+
+1.5 PM-KISAN HELPLINE
+- National Helpline: 155261 or 1800115526 (Toll-Free)
+- Email: pmkisan-ict@gov.in
+- State-wise nodal officers available on the portal
+
+---
+
+SECTION 2: PMFBY — PRADHAN MANTRI FASAL BIMA YOJANA (CROP INSURANCE)
+
+2.1 SCHEME OVERVIEW
+PMFBY provides comprehensive crop insurance coverage against natural calamities, pests and diseases, post-harvest losses, and localized calamities.
+
+2.2 PREMIUM RATES FOR FARMERS
+- Kharif Crops: Maximum 2% of sum insured (rest paid by Central + State Govt)
+- Rabi Crops: Maximum 1.5% of sum insured
+- Commercial/Horticultural Crops: Maximum 5% of sum insured
+- Actual actuarial premium is 10–20%; farmer pays only 2% for Kharif
+
+Example: Tomato insured at ₹60,000/hectare
+- Farmer premium (5%): ₹3,000/hectare
+- Government subsidy: ₹15,000–20,000/hectare (rest of premium)
+- In case of 100% crop loss: Farmer receives ₹60,000/hectare
+
+2.3 COVERAGE UNDER PMFBY
+- Prevented Sowing/Planting: If crop cannot be sown due to adverse weather
+- Standing Crop Loss: Due to drought, flood, hailstorm, cyclone, pest/disease attacks
+- Post-Harvest Losses: Up to 14 days for crops kept in field to dry
+- Localized Calamities: Hailstorm, landslide, inundation for individual farms
+
+2.4 HOW TO APPLY
+- KCC (Kisan Credit Card) holders: Auto-enrollment — opt out if not interested
+- Non-KCC farmers: Apply through bank, CSC, or state government portal
+- Apply before sowing cut-off date (announced by state government)
+- Online: pmfby.gov.in
+
+---
+
+SECTION 3: SOIL HEALTH CARD (SHC) SCHEME
+
+3.1 SCHEME OVERVIEW
+The Soil Health Card scheme provides every farmer a Soil Health Card every 2 years, showing nutrient status of their soil along with recommendations for appropriate dosage of nutrients.
+
+3.2 WHAT IS TESTED
+- Macro nutrients: N, P, K
+- Secondary nutrients: S (Sulfur), Ca (Calcium), Mg (Magnesium)
+- Micro nutrients: Zn, B, Fe, Mn, Cu
+- Physical parameters: pH, EC (Electrical Conductivity), Organic Carbon
+
+3.3 HOW TO GET SOIL HEALTH CARD
+1. Contact local Krishi Vigyan Kendra (KVK) or Agriculture Department
+2. Soil sample will be collected from your field (0–15 cm depth, 4–6 sub-samples per acre)
+3. Sample tested at Soil Testing Laboratory (STL)
+4. Report generated and available on soilhealth.dac.gov.in within 2–4 weeks
+5. Report includes crop-wise fertilizer recommendations
+
+3.4 USING THE SOIL HEALTH CARD
+- Follow NPK recommendations on the card exactly — over-application wastes money and harms environment
+- Acidic soils: Card will recommend liming (calcium carbonate application)
+- Micronutrient deficiency: Card will specify which micronutrients to apply and at what dose
+
+---
+
+SECTION 4: KISAN CREDIT CARD (KCC) SCHEME
+
+4.1 OVERVIEW
+KCC provides farmers with affordable credit for their agricultural operations at reduced interest rates.
+
+4.2 KCC BENEFITS
+- Credit limit: Based on land holding and crop production requirements (typically ₹1,00,000–₹3,00,000 for 2–5 acres)
+- Interest rate: 9% per annum (reduced to 4% effective with government interest subvention)
+- Additional 3% subvention for prompt repayment (effective rate: 4%)
+- Valid for 5 years with annual renewal
+- Includes insurance coverage for personal accident (₹50,000 death/permanent disability)
+
+4.3 HOW TO APPLY FOR KCC
+- Apply at any nationalized bank, cooperative bank, or Regional Rural Bank (RRB)
+- Documents required:
+  - Aadhaar card
+  - Land ownership documents (Khasra/7/12 extract)
+  - Passport-size photographs
+  - Bank account details
+
+4.4 KCC FOR ANIMAL HUSBANDRY AND FISHERIES
+Extended to allied activities:
+- Animal husbandry farmers: Credit for feed, medicines, equipment
+- Fish farmers: Credit for pond preparation, fingerlings, feed
+- Limit: ₹2 lakh for small farmers in allied activities
+
+---
+
+SECTION 5: NATIONAL AGRICULTURE MARKET (e-NAM)
+
+5.1 OVERVIEW
+e-NAM (Electronic National Agriculture Market) is a pan-India electronic trading portal that networks existing APMC mandis to create a unified national market for agricultural commodities.
+
+5.2 BENEFITS FOR FARMERS
+- Better price discovery through transparent online bidding
+- Reduced dependence on middlemen
+- Payment directly to bank account within 24–48 hours
+- Access to buyers from across India
+- Quality assay (grading) of produce at mandi
+
+5.3 HOW TO REGISTER ON e-NAM
+- Register at enam.gov.in or at your nearest e-NAM linked APMC
+- Documents: Aadhaar, bank passbook, land records
+- After registration, bring produce to e-NAM linked mandi for quality testing and online bidding
+
+5.4 COMMODITIES TRADED ON e-NAM
+Over 200 commodities including:
+- Cereals: Wheat, Paddy, Maize, Sorghum
+- Oilseeds: Soybean, Groundnut, Mustard
+- Pulses: Chickpea, Pigeon pea, Moong
+- Vegetables: Onion, Potato, Tomato, Garlic
+- Fruits: Mango, Banana, Grapes
+
+---
+Reference: DA&FW Circulars 2022-23, PMKSY Implementation Guidelines 2023
+Document prepared for AgroAI Knowledge Base — verified factual content

@@ -1,8 +1,69 @@
 // ═══════════════════════════════════════════════
-// AgroAI — script.js  (Part 1: Utility Modules)
+// AgroAI — script.js  (Phase 2A/2B/2C Upgrade)
 // ═══════════════════════════════════════════════
 
 const API_URL = "http://127.0.0.1:5000";
+
+// ── I18n MODULE (Phase 2A) ─────────────────────
+const I18n = {
+  _lang: 'en',
+  _strings: {},
+  _cache: {},
+
+  async init() {
+    const saved = localStorage.getItem('agroai_lang') || 'en';
+    await this.setLang(saved, false);
+    this._bindToggle();
+  },
+
+  async setLang(lang, persist = true) {
+    if (!this._cache[lang]) {
+      try {
+        const res = await fetch(`/translations/${lang}.json`);
+        this._cache[lang] = await res.json();
+      } catch (e) {
+        console.warn('[I18n] Failed to load', lang, e);
+        return;
+      }
+    }
+    this._lang = lang;
+    this._strings = this._cache[lang];
+    if (persist) localStorage.setItem('agroai_lang', lang);
+    this._apply();
+    this._updateToggle();
+    // Update voice recognition language
+    if (window.Voice && Voice.recog) Voice.recog.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
+  },
+
+  t(key, fallback) {
+    return this._strings[key] || fallback || key;
+  },
+
+  getLang() { return this._lang; },
+
+  _apply() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (this._strings[key]) el.textContent = this._strings[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (this._strings[key]) el.placeholder = this._strings[key];
+    });
+  },
+
+  _bindToggle() {
+    document.querySelectorAll('[data-lang]').forEach(btn => {
+      btn.addEventListener('click', () => this.setLang(btn.dataset.lang));
+    });
+  },
+
+  _updateToggle() {
+    document.querySelectorAll('[data-lang]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === this._lang);
+    });
+  }
+};
 
 // ── STORAGE UTILS ──────────────────────────────
 const Storage = {
@@ -332,7 +393,7 @@ const HistoryManager = {
   }
 };
 
-// ── ANALYTICS (Phase 1B Enhanced) ─────────────────────────
+// ── ANALYTICS (Phase 2C Enhanced) ─────────────────────────
 const Analytics = {
   charts: {},
   async render() {
@@ -343,9 +404,7 @@ const Analytics = {
     let dashStats = null;
     if (window.Auth && Auth.isLoggedIn()) {
       try {
-        const res = await fetch(API_URL + '/api/dashboard', {
-          headers: { ...Auth.getAuthHeaders() }
-        });
+        const res = await fetch(API_URL + '/api/dashboard', { headers: { ...Auth.getAuthHeaders() } });
         if (res.ok) dashStats = await res.json();
       } catch (_) {}
     }
@@ -357,21 +416,10 @@ const Analytics = {
     if (!total && !items.length) { empty?.classList.remove('hidden'); return; }
     empty?.classList.add('hidden');
 
-    // KPI cards
     const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
     setEl('kpi-total',    total);
     setEl('kpi-diseased', diseased);
     setEl('kpi-healthy',  healthy);
-
-    // Top disease
-    const freq = {};
-    items.filter(i => !i.isHealthy).forEach(i => { freq[i.disease] = (freq[i.disease] || 0) + 1; });
-    const topDisease = dashStats?.topDisease || Object.keys(freq).sort((a, b) => freq[b] - freq[a])[0] || '—';
-    setEl('kpi-top', topDisease !== '—' ? topDisease.split('___').pop().replace(/_/g, ' ') : '—');
-
-    // High risk count
-    const highRisk = dashStats?.riskBreakdown?.HIGH ?? items.filter(i => i.riskLevel === 'HIGH').length;
-    setEl('kpi-high-risk', highRisk);
 
     // Last scan date
     if (dashStats?.lastScan?.date || items.length) {
@@ -379,11 +427,29 @@ const Analytics = {
       setEl('kpi-last-scan', lastDate ? new Date(lastDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—');
     }
 
+    // Phase 2C KPI: Highest Risk Scan
+    const hrScan = dashStats?.highestRiskScan;
+    if (hrScan) {
+      setEl('kpi-highest-risk', hrScan.disease.split('___').pop().replace(/_/g,' ').slice(0,18) + ' (' + hrScan.riskScore + '%)');
+    } else {
+      const hrLocal = items.reduce((best, i) => (i.riskScore || 0) > (best?.riskScore || 0) ? i : best, null);
+      setEl('kpi-highest-risk', hrLocal ? hrLocal.disease.split('___').pop().replace(/_/g,' ').slice(0,18) : '—');
+    }
+
+    // Phase 2C KPI: Avg Confidence
+    const avgConf = dashStats?.avgConfidence ?? (items.length ? Math.round(items.reduce((s,i)=>s+(i.confidence||0),0)/items.length) : null);
+    setEl('kpi-avg-conf', avgConf !== null ? avgConf + '%' : '—');
+
+    // Disease freq for bar chart
+    const freq = {};
+    items.filter(i => !i.isHealthy).forEach(i => { freq[i.disease] = (freq[i.disease] || 0) + 1; });
+
     // Charts
     this.renderDonut(healthy, diseased);
     this.renderBar(freq, items);
-    this.renderLine(items);
+    this.renderLine(dashStats?.scanActivityTrend, items);
     this.renderRisk(dashStats?.riskBreakdown, items);
+    this.renderMonthly(dashStats?.monthlyProgress);
 
     // Activity timeline
     const activity = dashStats?.recentActivity || items.slice(0, 10).map(i => ({
@@ -435,26 +501,55 @@ const Analytics = {
     });
   },
 
-  renderLine(items) {
+  renderLine(trendData, items) {
     this.destroy('line');
     const ctx = document.getElementById('chart-line');
     if (!ctx) return;
-    const days = {}; const now = Date.now();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(now - i * 86400000);
-      days[d.toLocaleDateString('en', { month: 'short', day: 'numeric' })] = 0;
+    let labels, values;
+    if (trendData && trendData.length) {
+      labels = trendData.map(d => d.date);
+      values = trendData.map(d => d.count);
+    } else {
+      // Fallback: compute 7-day from local items
+      const days = {}; const now = Date.now();
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now - i * 86400000);
+        days[d.toLocaleDateString('en', { month: 'short', day: 'numeric' })] = 0;
+      }
+      items.forEach(item => {
+        const ts = item.timestamp || item.id;
+        const parsedTs = isNaN(Number(ts)) ? ts : Number(ts);
+        const d = new Date(parsedTs).toLocaleDateString('en', { month: 'short', day: 'numeric' });
+        if (d in days) days[d]++;
+      });
+      labels = Object.keys(days); values = Object.values(days);
     }
-    items.forEach(item => {
-      const ts = item.timestamp || item.id;
-      const parsedTs = isNaN(Number(ts)) ? ts : Number(ts);
-      const d = new Date(parsedTs).toLocaleDateString('en', { month: 'short', day: 'numeric' });
-      if (d in days) days[d]++;
-    });
     const def = this.chartDefaults();
     this.charts.line = new Chart(ctx, {
       type: 'line',
-      data: { labels: Object.keys(days), datasets: [{ label: 'Scans', data: Object.values(days), borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: 'rgba(16,185,129,1)' }] },
+      data: { labels, datasets: [{ label: 'Scans', data: values, borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: 'rgba(16,185,129,1)', pointRadius: 3 }] },
       options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+    });
+  },
+
+  renderMonthly(monthlyData) {
+    this.destroy('monthly');
+    const ctx = document.getElementById('chart-monthly');
+    if (!ctx || !monthlyData || !monthlyData.length) return;
+    const labels   = monthlyData.map(m => m.month);
+    const healthy  = monthlyData.map(m => m.healthy);
+    const diseased = monthlyData.map(m => m.diseased);
+    const def = this.chartDefaults();
+    this.charts.monthly = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Healthy', data: healthy, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1, borderRadius: 6 },
+          { label: 'Diseased', data: diseased, backgroundColor: 'rgba(239,68,68,0.7)', borderColor: 'rgba(239,68,68,1)', borderWidth: 1, borderRadius: 6 }
+        ]
+      },
+      options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: def.scales, responsive: true, maintainAspectRatio: false }
     });
   },
 
@@ -484,10 +579,12 @@ const Analytics = {
   },
 
   renderActivity(activity) {
-    const section = document.getElementById('activity-section');
-    const list    = document.getElementById('activity-list');
-    if (!section || !list || !activity?.length) return;
-    section.style.display = 'block';
+    const list = document.getElementById('activity-list');
+    if (!list) return;
+    if (!activity || !activity.length) {
+      list.innerHTML = '<div class="activity-empty">No recent scans to show.</div>';
+      return;
+    }
     const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
     list.innerHTML = activity.map(a => `
       <div class="activity-item">
@@ -496,6 +593,7 @@ const Analytics = {
           <div class="activity-disease">${(a.disease || 'Unknown').split('___').pop().replace(/_/g, ' ')}</div>
           <div class="activity-date">${fmt(a.date)}</div>
         </div>
+        ${a.confidence ? `<span style="color:var(--text2);font-size:.72rem;margin-right:4px">${a.confidence}%</span>` : ''}
         <span class="activity-risk ${a.riskLevel || 'LOW'}">${a.riskLevel || 'LOW'}</span>
       </div>`).join('');
   }
@@ -668,44 +766,82 @@ const RiskCard = {
   }
 };
 
-// ── FEEDBACK ───────────────────────────────────
+// ── FEEDBACK (Phase 2B — MongoDB-backed) ────────
 const Feedback = {
   selected: 0,
   init() {
     document.querySelectorAll(".star").forEach(s => {
       s.addEventListener("mouseenter", () => this.highlight(+s.dataset.val));
       s.addEventListener("mouseleave", () => this.highlight(this.selected));
-      s.addEventListener("click", () => { this.selected = +s.dataset.val; this.highlight(this.selected); document.getElementById("star-label").textContent = ["", "Poor","Fair","Good","Great","Excellent!"][this.selected]; });
+      s.addEventListener("click", () => {
+        this.selected = +s.dataset.val;
+        this.highlight(this.selected);
+        const labels = ["","Poor","Fair","Good","Great","Excellent!"];
+        const hiLabels = ["","खराब","ठीक","अच्छा","बहुत अच्छा","उत्कृष्ट!"];
+        const lbl = I18n.getLang() === 'hi' ? hiLabels : labels;
+        document.getElementById("star-label").textContent = lbl[this.selected];
+      });
     });
     document.getElementById("feedback-submit-btn").addEventListener("click", () => this.submit());
     document.getElementById("go-scan-btn")?.addEventListener("click", () => Router.navigate("home"));
     document.getElementById("go-scan-analytics-btn")?.addEventListener("click", () => Router.navigate("home"));
   },
   highlight(val) { document.querySelectorAll(".star").forEach(s => s.classList.toggle("active", +s.dataset.val <= val)); },
-  submit() {
-    if (!this.selected) { Toast.show("Please select a star rating.", "error"); return; }
-    const text = document.getElementById("feedback-text").value.trim();
-    Storage.addFeedback({ rating: this.selected, text, timestamp: new Date().toLocaleString() });
-    this.selected = 0; this.highlight(0);
-    document.getElementById("feedback-text").value = "";
-    document.getElementById("star-label").textContent = "Click to rate";
-    Toast.show("Thank you for your feedback! ⭐", "success");
-    this.render();
+  async submit() {
+    if (!this.selected) { Toast.show(I18n.t('feedback_select_rating','Please select a star rating.'), "error"); return; }
+    if (!window.Auth || !Auth.isLoggedIn()) { Toast.show(I18n.t('feedback_login_required','Please login to submit feedback.'), "error"); return; }
+    const text = (document.getElementById("feedback-text").value || "").trim();
+    if (text.length < 10) { Toast.show(I18n.t('feedback_min_chars','Message must be at least 10 characters.'), "error"); return; }
+    if (text.length > 1000) { Toast.show(I18n.t('feedback_max_chars','Message cannot exceed 1000 characters.'), "error"); return; }
+    const btn = document.getElementById("feedback-submit-btn");
+    btn.disabled = true;
+    try {
+      const res = await fetch(API_URL + '/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...Auth.getAuthHeaders() },
+        body: JSON.stringify({ rating: this.selected, message: text })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || 'Submit failed');
+      this.selected = 0; this.highlight(0);
+      document.getElementById("feedback-text").value = "";
+      document.getElementById("feedback-char-count").textContent = "0 / 1000";
+      document.getElementById("star-label").textContent = I18n.t('star_label_default','Click to rate');
+      Toast.show(I18n.t('feedback_success','Thank you for your feedback! ⭐'), "success");
+      this.render();
+    } catch(e) {
+      Toast.show('Failed: ' + e.message, "error");
+    } finally { btn.disabled = false; }
   },
-  render() {
-    const items = Storage.getFeedback();
+  async render() {
+    // Load public stats
+    try {
+      const sr = await fetch(API_URL + '/api/feedback/stats');
+      const sd = await sr.json();
+      if (sd.success) {
+        const avg = document.getElementById("avg-rating");
+        const tot = document.getElementById("total-feedback");
+        if (avg) avg.textContent = sd.avg_rating ? sd.avg_rating + " ⭐" : "—";
+        if (tot) tot.textContent = sd.total || 0;
+      }
+    } catch(_){}
+    // Load user's own feedback if logged in
     const list = document.getElementById("feedback-list");
-    const avg = document.getElementById("avg-rating");
-    const total = document.getElementById("total-feedback");
-    total.textContent = items.length;
-    avg.textContent = items.length ? (items.reduce((s, i) => s + i.rating, 0) / items.length).toFixed(1) + " ⭐" : "—";
     if (!list) return;
-    list.innerHTML = items.slice(0, 10).map(item => `
-      <div class="feedback-item">
-        <div class="feedback-item-stars">${"★".repeat(item.rating)}${"☆".repeat(5 - item.rating)}</div>
-        ${item.text ? `<div class="feedback-item-text">"${item.text}"</div>` : ""}
-        <div class="feedback-item-time">${item.timestamp}</div>
-      </div>`).join("");
+    if (!window.Auth || !Auth.isLoggedIn()) { list.innerHTML = '<div style="color:var(--text2);font-size:.85rem;padding:12px 0">Login to see your feedback.</div>'; return; }
+    try {
+      const mr = await fetch(API_URL + '/api/feedback/my', { headers: Auth.getAuthHeaders() });
+      const md = await mr.json();
+      const items = md.feedbacks || [];
+      if (!items.length) { list.innerHTML = '<div style="color:var(--text2);font-size:.85rem;padding:12px 0">No feedback submitted yet.</div>'; return; }
+      const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) : '';
+      list.innerHTML = items.slice(0,10).map(item => `
+        <div class="feedback-item">
+          <div class="feedback-item-stars">${"★".repeat(item.rating)}${"☆".repeat(5-item.rating)}</div>
+          ${item.message ? `<div class="feedback-item-text">"${item.message}"</div>` : ""}
+          <div class="feedback-item-time">${fmt(item.createdAt)}</div>
+        </div>`).join("");
+    } catch(_){ list.innerHTML = '<div style="color:var(--text2);font-size:.85rem">Could not load feedback.</div>'; }
   }
 };
 
@@ -937,7 +1073,7 @@ document.getElementById('save-history-manual-btn') && document.getElementById('s
 document.getElementById('clear-all-btn') && document.getElementById('clear-all-btn').addEventListener('click', () => HistoryManager.clearAll());
 chatSendButton.addEventListener('click', sendChatMessage);
 chatInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') sendChatMessage(); });
-async function sendChatMessage() { const message = chatInput.value.trim(); if (!message) return; addMessageToChat(message, 'user'); chatInput.value = ''; chatSendButton.disabled = true; const typing = createTypingIndicator(); chatBox.appendChild(typing); chatBox.scrollTop = chatBox.scrollHeight; try { const res = await fetch(API_URL + '/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, session_id: chatContext.session_id, disease: chatContext.disease, symptoms: chatContext.symptoms, treatment: chatContext.treatment, prevention: chatContext.prevention }) }); if (chatBox.contains(typing)) chatBox.removeChild(typing); if (!res.ok) throw new Error('Chat failed'); const data = await res.json(); const isLocal = data.mode === 'local'; if (isLocal) showLocalModeBadge(); addMessageToChat(data.response, 'bot', isLocal); } catch { if (chatBox.contains(typing)) chatBox.removeChild(typing); showLocalModeBadge(); addMessageToChat('Using offline mode. Ask me about symptoms, treatment or prevention!', 'bot', true); } finally { chatSendButton.disabled = false; chatInput.focus(); } }
+async function sendChatMessage() { const message = chatInput.value.trim(); if (!message) return; addMessageToChat(message, 'user'); chatInput.value = ''; chatSendButton.disabled = true; const typing = createTypingIndicator(); chatBox.appendChild(typing); chatBox.scrollTop = chatBox.scrollHeight; try { const res = await fetch(API_URL + '/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message, session_id: chatContext.session_id, disease: chatContext.disease, symptoms: chatContext.symptoms, treatment: chatContext.treatment, prevention: chatContext.prevention, language: I18n.getLang() }) }); if (chatBox.contains(typing)) chatBox.removeChild(typing); if (!res.ok) throw new Error('Chat failed'); const data = await res.json(); const isLocal = data.mode === 'local'; if (isLocal) showLocalModeBadge(); addMessageToChat(data.response, 'bot', isLocal); } catch { if (chatBox.contains(typing)) chatBox.removeChild(typing); showLocalModeBadge(); addMessageToChat('Using offline mode. Ask me about symptoms, treatment or prevention!', 'bot', true); } finally { chatSendButton.disabled = false; chatInput.focus(); } }
 function showLocalModeBadge() { const b = document.getElementById('local-mode-badge'); if (b) b.classList.remove('hidden'); }
 function createTypingIndicator() { const w = document.createElement('div'); w.classList.add('chat-msg','bot','typing-indicator'); w.innerHTML = '<span class=typing-label>Expert is thinking</span><span class=dots><span></span><span></span><span></span></span>'; return w; }
 function addMessageToChat(text, sender, isLocalMode = false) { const div = document.createElement('div'); div.classList.add('chat-msg', sender); if (sender === 'bot' && isLocalMode) div.classList.add('local-mode'); let html = text.replace(/\*\*(.*?)\*\*/g,'<strong></strong>').replace(/_(.*?)_/g,'<em></em>').replace(/^[-]\s(.+)/gm,'<li></li>').replace(/(<li>.*<\/li>\n?)+/g,m=>'<ul>'+m+'</ul>').replace(/\n/g,'<br>'); if (sender === 'bot' && isLocalMode) html = '<div class=local-badge>Local Expert Mode</div>' + html; div.innerHTML = html; chatBox.appendChild(div); chatBox.scrollTop = chatBox.scrollHeight; }
@@ -990,6 +1126,20 @@ const ProfilePage = {
 };
 
 Voice.init(); Camera.init(); Feedback.init(); Weather.init();
+// Phase 2A: init language system after DOM ready
+I18n.init();
+// Phase 2B: init char counter
+(function(){
+  const ta = document.getElementById('feedback-text');
+  const cc = document.getElementById('feedback-char-count');
+  if (ta && cc) {
+    ta.addEventListener('input', () => {
+      const len = ta.value.length;
+      cc.textContent = len + ' / 1000';
+      cc.className = 'feedback-char-count' + (len > 1000 ? ' over' : len > 900 ? ' warn' : '');
+    });
+  }
+})();
 
 // ── Auth Init — guaranteed after full DOM parse ────────────
 if (typeof window.Auth !== 'undefined') {
@@ -999,7 +1149,7 @@ if (typeof window.Auth !== 'undefined') {
     if (typeof window.Auth !== 'undefined') Auth.init();
   });
 }
-window.AgroAI = { PDF, Router, Toast, HistoryManager, Analytics, Feedback, Storage, ProfilePage, Weather, RiskCard };
+window.AgroAI = { PDF, Router, Toast, HistoryManager, Analytics, Feedback, Storage, ProfilePage, Weather, RiskCard, I18n };
 
 // Re-render data pages on auth changes (login/logout)
 document.addEventListener('agroai:auth', (e) => {
@@ -1015,4 +1165,231 @@ document.addEventListener('agroai:auth', (e) => {
   if (page === 'history')   HistoryManager.render();
   if (page === 'analytics') Analytics.render();
   if (page === 'profile')   ProfilePage.render();
+});
+
+// =============================================================================
+// PHASE 3A — RAG Agriculture Expert Chat Module
+// =============================================================================
+const RAGChat = (() => {
+  let _busy = false;
+
+  // ── DOM refs (resolved lazily after DOMContentLoaded) ──────────────────
+  const $ = id => document.getElementById(id);
+
+  // ── Markdown-lite renderer (bold, bullet lists) ────────────────────────
+  function _renderMarkdown(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/^[-•]\s+(.+)$/gm, '<li>$1</li>')
+      .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+      .replace(/\n{2,}/g, '<br><br>')
+      .replace(/\n/g, '<br>');
+  }
+
+  // ── Add a chat bubble ──────────────────────────────────────────────────
+  function _addMsg(html, role, extraClass = '') {
+    const box = $('rag-chat-box');
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = `rag-msg ${role}${extraClass ? ' ' + extraClass : ''}`;
+    div.innerHTML = html;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ── Typing indicator ───────────────────────────────────────────────────
+  function _showTyping() {
+    const box = $('rag-chat-box');
+    if (!box) return null;
+    const el = document.createElement('div');
+    el.className = 'typing-indicator';
+    el.id = 'rag-typing';
+    el.innerHTML = `
+      <span class="typing-label">Agriculture Expert is searching knowledge base…</span>
+      <div class="dots"><span></span><span></span><span></span></div>`;
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+    return el;
+  }
+
+  // ── Render source citation pills ──────────────────────────────────────
+  function _renderSources(sources) {
+    const panel = $('rag-sources-panel');
+    const list  = $('rag-sources-list');
+    if (!panel || !list) return;
+
+    if (!sources || sources.length === 0) {
+      panel.classList.add('hidden');
+      return;
+    }
+
+    list.innerHTML = sources.map(s => {
+      const doc  = (s.document  || 'Unknown').replace(/_/g, ' ').replace('.txt','').replace('.pdf','');
+      const page = s.page  || 1;
+      const cat  = (s.category || 'general');
+      return `
+        <span class="rag-source-pill" title="${s.document}">
+          <span class="pill-icon">📄</span>
+          <span class="pill-doc">${doc}</span>
+          <span class="pill-page">p.${page}</span>
+          <span class="pill-cat">[${cat}]</span>
+        </span>`;
+    }).join('');
+
+    panel.classList.remove('hidden');
+  }
+
+  // ── Update the mode badge in the header ───────────────────────────────
+  function _updateBadge(mode) {
+    const badge = $('rag-mode-badge');
+    if (!badge) return;
+    badge.className = 'rag-mode-badge';
+    if (mode === 'rag') {
+      badge.classList.add('mode-rag');
+      badge.textContent = '🔬 Knowledge Base';
+    } else if (mode === 'fallback') {
+      badge.classList.add('mode-fallback');
+      badge.textContent = '⚠️ General AI';
+    } else {
+      badge.classList.add('mode-ready');
+      badge.textContent = '🔬 Ready';
+    }
+  }
+
+  // ── Main send function ─────────────────────────────────────────────────
+  async function send(question) {
+    question = (question || '').trim();
+    if (!question || _busy) return;
+
+    _busy = true;
+    const sendBtn = $('rag-send-btn');
+    const input   = $('rag-question-input');
+    if (sendBtn) sendBtn.disabled = true;
+
+    // Add user bubble
+    _addMsg(question, 'user');
+    if (input) input.value = '';
+
+    // Typing indicator
+    const typing = _showTyping();
+
+    try {
+      // Detect language from I18n module (falls back to 'en')
+      const lang = (typeof I18n !== 'undefined' && I18n.getLang) ? I18n.getLang() : 'en';
+
+      const res = await fetch(`${API_URL}/api/rag-chat`, {
+        method:  'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(Auth && Auth.getAuthHeaders ? Auth.getAuthHeaders() : {}),
+        },
+        body: JSON.stringify({ question, language: lang }),
+      });
+
+      if (typing) typing.remove();
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        _addMsg(`❌ ${err.error || 'Request failed (' + res.status + ')'}`, 'bot');
+        return;
+      }
+
+      const data = await res.json();
+      const mode    = data.mode    || 'fallback';
+      const answer  = data.answer  || '';
+      const sources = data.sources || [];
+
+      const extraClass = mode === 'fallback' ? 'fallback-msg' : '';
+      _addMsg(_renderMarkdown(answer), 'bot', extraClass);
+      _renderSources(sources);
+      _updateBadge(mode);
+
+    } catch (err) {
+      if (typing) typing.remove();
+      _addMsg('🌐 Could not reach the server. Please check your connection and try again.', 'bot');
+      console.error('[RAGChat] fetch error:', err);
+    } finally {
+      _busy = false;
+      if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  // ── Voice input (reuses existing SpeechRecognition pattern) ───────────
+  function _initVoice() {
+    const voiceBtn = $('rag-voice-btn');
+    const input    = $('rag-question-input');
+    if (!voiceBtn || !input) return;
+
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { voiceBtn.style.display = 'none'; return; }
+
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-IN';
+
+    recognition.onresult = e => {
+      input.value = e.results[0][0].transcript;
+      voiceBtn.classList.remove('listening');
+    };
+    recognition.onerror = () => voiceBtn.classList.remove('listening');
+    recognition.onend   = () => voiceBtn.classList.remove('listening');
+
+    voiceBtn.addEventListener('click', () => {
+      voiceBtn.classList.add('listening');
+      recognition.start();
+    });
+  }
+
+  // ── Welcome message ────────────────────────────────────────────────────
+  function _welcome() {
+    _addMsg(
+      '👋 <strong>Namaste! I am the AgroAI Agriculture Expert.</strong><br><br>' +
+      'My answers are grounded in verified ICAR agricultural documents. I can help with:<br><br>' +
+      '<ul>' +
+      '<li>🍅 <strong>Plant Diseases</strong> — identification & chemical/biological control</li>' +
+      '<li>🌱 <strong>Fertilizers</strong> — NPK recommendations by crop</li>' +
+      '<li>💧 <strong>Irrigation</strong> — drip system setup & fertigation</li>' +
+      '<li>🏛️ <strong>Government Schemes</strong> — PM-KISAN, PMFBY, KCC</li>' +
+      '<li>🌾 <strong>Crop Management</strong> — sowing, varieties, pest control</li>' +
+      '<li>🌧️ <strong>Weather Advisories</strong> — monsoon & frost protection</li>' +
+      '</ul><br>' +
+      'Use the quick buttons below or type your question!',
+      'bot'
+    );
+  }
+
+  // ── Public init ────────────────────────────────────────────────────────
+  function init() {
+    const sendBtn = $('rag-send-btn');
+    const input   = $('rag-question-input');
+    if (!sendBtn || !input) return; // RAG panel not in DOM
+
+    // Send on button click
+    sendBtn.addEventListener('click', () => send(input.value));
+
+    // Send on Enter key
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input.value); }
+    });
+
+    // Quick question buttons
+    document.querySelectorAll('.rag-quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => send(btn.dataset.q));
+    });
+
+    // Voice
+    _initVoice();
+
+    // Welcome message
+    _welcome();
+  }
+
+  return { init, send };
+})();
+
+// ── Auto-init RAGChat on DOMContentLoaded ─────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  RAGChat.init();
 });

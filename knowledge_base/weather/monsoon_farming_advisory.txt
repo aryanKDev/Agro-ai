@@ -1,0 +1,133 @@
+MONSOON AND WEATHER ADVISORY FOR FARMERS — INDIA
+==================================================
+Source: India Meteorological Department (IMD) & ICAR Agricultural Weather Division
+Category: Weather Advisory | Season: Kharif, Rabi, Zaid
+
+---
+
+SECTION 1: KHARIF SEASON (JUNE–OCTOBER) ADVISORY
+
+1.1 MONSOON SOWING CALENDAR
+- Kerala / Karnataka: June 1–10
+- Maharashtra / MP / Chhattisgarh: June 10–20
+- UP / Bihar / Jharkhand: June 15–25
+- Punjab / Haryana / Rajasthan: July 1–10
+
+Do NOT sow before 50–75 mm of rainfall over 2–3 consecutive days. Dry sowing leads to poor germination.
+
+Kharif crops and sowing windows:
+- Paddy (transplanted): June 15 – July 15
+- Maize: June 15 – July 10
+- Soybean: June 20 – July 5
+- Groundnut: June 15 – July 10
+- Tomato (Kharif planting): June 15 – July 15 (nursery May–June)
+- Onion (Kharif): June – July
+
+1.2 EL NIÑO VS LA NIÑA ADVISORY
+El Niño Years (Deficit Monsoon):
+- Delay sowing by 10–15 days; use drought-tolerant varieties
+- Reduce water-intensive crops (paddy); shift to millets, pulses
+- Prepare supplemental irrigation for critical stages (flowering, grain fill)
+
+La Niña Years (Excess Monsoon):
+- Dig drainage channels in field before monsoon onset
+- High disease pressure — apply preventive Mancozeb 2.5 g/L sprays
+- Risk of flooding and soil erosion — use ridges and raised beds
+
+1.3 WATERLOGGING MANAGEMENT
+If field is waterlogged:
+1. Immediately create 30–45 cm drainage channels every 5–6 rows
+2. Remove stagnant water within 24 hours (root rot begins at 48 hours)
+3. After draining: soil drench with Trichoderma viride 5 g/L
+4. Spray Urea 2% foliar (leaching causes nitrogen deficiency)
+5. Preventive spray: Mancozeb 2.5 g/L for post-waterlogging fungal control
+
+1.4 HIGH HUMIDITY DISEASE ALERT
+Disease risk is HIGH when:
+- Relative Humidity > 85% for 3+ consecutive days
+- Leaf wetness > 6 hours at 20–28°C → Early/Late Blight in tomato/potato
+- Temperature 18–25°C + rain → Downy Mildew in cucurbits
+- Humid nights followed by sunny days → Powdery Mildew
+
+Action: Apply Mancozeb or Chlorothalonil within 24 hours of first symptoms.
+
+---
+
+SECTION 2: RABI SEASON (NOVEMBER–MARCH) ADVISORY
+
+2.1 RABI SOWING CALENDAR
+- Wheat (North India): October 25 – November 25 (optimum)
+- Mustard: October 15 – November 15
+- Chickpea: October 20 – November 20
+- Potato: October 1 – October 30
+- Tomato (Rabi): October–November transplanting
+
+Late wheat sowing (after December 15) reduces yield by 30–40 kg/ha per day of delay.
+
+2.2 WINTER FOG ADVISORY (December–February, North India)
+Fog creates prolonged leaf wetness — HIGH DISEASE RISK:
+- Early blight and late blight in tomato/potato
+- Botrytis grey mould in chickpea
+- Powdery mildew in mustard, wheat
+
+Preventive sprays during fog season:
+- Mancozeb 2.5 g/L or Copper oxychloride 3.0 g/L — every 7–10 days
+- Sulfur dust 30 kg/ha — for powdery mildew in mustard
+- Delay irrigation during fog; no overhead irrigation
+
+2.3 FROST PROTECTION (Temperature < 3°C)
+Action before frost (based on IMD forecast):
+1. Light irrigation before expected frost — wet soil radiates heat
+2. Smoke generation (windward side of field)
+3. Cover nurseries with agro-net or polythene overnight
+4. Spray Potassium Nitrate 0.5% — improves frost tolerance
+5. Spray Kaolin clay 5% — reflective coating protects from radiation frost
+
+---
+
+SECTION 3: SUMMER SEASON HEAT STRESS MANAGEMENT
+
+3.1 HEAT EFFECTS ON CROPS
+- Temperature > 35°C during flowering → pollen sterility, flower drop
+- Temperature > 40°C → complete crop failure
+- Tomato optimal temperature: 21–27°C (day), 15–20°C (night)
+
+3.2 HEAT MITIGATION
+- Irrigate early morning (5–7 AM) or late evening — NOT during peak heat
+- Use 30–50% shade nets — reduces temperature by 3–5°C
+- Black polyethylene mulch — reduces soil temperature by 4–6°C
+- Spray Kaolin clay 5% — reflects solar radiation
+- Potassium Nitrate foliar 0.5% — strengthens cell membranes under heat
+
+Heat-tolerant varieties for tomato: Arka Rakshak, Pusa Sheetal
+Heat-tolerant onion: Bhima Super, Arka Kalyan
+
+---
+
+SECTION 4: WEATHER FORECASTING SERVICES FOR FARMERS
+
+4.1 IMD AGROMET ADVISORY
+District-level bulletins released every Tuesday and Friday:
+- Kisan Portal: mkisan.gov.in
+- Kisan SMS: Send "JOIN KISAN <state>" to 51969
+- DD Kisan Channel: Daily weather and farm advisory broadcast
+- Meghdoot App (IMD): Download from Google Play Store — rainfall, temperature, humidity forecasts
+
+4.2 PEST AND DISEASE FORECASTING
+- ICAR CRIDA Pest Prediction model: Weather-based pest outbreak alerts
+- State Department crop protection apps (available in most states)
+- Automatic Weather Stations (AWS): 640+ stations across India; data on IMD portal
+
+---
+
+SECTION 5: CLIMATE-SMART AGRICULTURE PRACTICES
+
+1. Zero-tillage / Minimum Tillage — saves ₹1,500–2,000/acre fuel cost
+2. System of Rice Intensification (SRI) — 25–30% water saving
+3. Farm Ponds — harvest rainwater for supplemental irrigation
+4. Crop Diversification — intercropping reduces weather-related losses
+5. Agroforestry — border trees reduce wind damage, provide shade
+
+---
+Reference: IMD Agromet Advisory Bulletin, ICAR-CRIDA Hyderabad, NICRA Project
+Document prepared for AgroAI Knowledge Base — verified factual content

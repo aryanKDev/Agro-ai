@@ -47,22 +47,27 @@
         <span class="live-badge"><span class="live-dot"></span>Live</span>
       </a>
       <div class="nav-links" id="nav-links">
-        <a href="#" class="nav-link nav-page-link active-nav" data-page="home">🏠 Home</a>
-        <a href="#" class="nav-link nav-page-link" data-page="history">📋 History</a>
-        <a href="#" class="nav-link nav-page-link" data-page="analytics">📊 Analytics</a>
-        <a href="#" class="nav-link nav-page-link" data-page="feedback">⭐ Feedback</a>
+        <a href="#" class="nav-link nav-page-link active-nav" data-page="home" data-i18n="nav_home">🏠 Home</a>
+        <a href="#" class="nav-link nav-page-link" data-page="history" data-i18n="nav_history">📋 History</a>
+        <a href="#" class="nav-link nav-page-link" data-page="analytics" data-i18n="nav_analytics">📊 Analytics</a>
+        <a href="#" class="nav-link nav-page-link" data-page="feedback" data-i18n="nav_feedback">⭐ Feedback</a>
+        <!-- LANGUAGE TOGGLE -->
+        <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language selector">
+          <button class="lang-btn active" id="lang-en" data-lang="en">EN</button>
+          <button class="lang-btn" id="lang-hi" data-lang="hi">हिंदी</button>
+        </div>
         <!-- GUEST LINKS -->
         <div class="nav-auth-group" id="nav-guest-links">
-          <a href="#" class="nav-link nav-auth-link" id="btn-nav-login">Login</a>
-          <a href="#" class="nav-btn-register" id="btn-nav-register">Register</a>
+          <a href="#" class="nav-link nav-auth-link" id="btn-nav-login" data-i18n="nav_login">Login</a>
+          <a href="#" class="nav-btn-register" id="btn-nav-register" data-i18n="nav_register">Register</a>
         </div>
         <!-- AUTH LINKS -->
         <div class="nav-auth-group hidden" id="nav-auth-links">
           <span class="nav-welcome-pill" id="nav-welcome-pill">👤 User</span>
-          <a href="#" class="nav-link nav-page-link" data-page="profile" id="btn-nav-profile">Profile</a>
-          <a href="#" class="nav-link nav-logout-link" id="btn-nav-logout">Logout</a>
+          <a href="#" class="nav-link nav-page-link" data-page="profile" id="btn-nav-profile" data-i18n="nav_profile">Profile</a>
+          <a href="#" class="nav-link nav-logout-link" id="btn-nav-logout" data-i18n="nav_logout">Logout</a>
         </div>
-        <a href="#detector" class="nav-cta-btn" id="nav-cta">Try Free →</a>
+        <a href="#detector" class="nav-cta-btn" id="nav-cta" data-i18n="nav_try_free">Try Free →</a>
       </div>
       <button class="hamburger" id="hamburger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
@@ -138,14 +143,14 @@
                   <div class="upload-ring"></div>
                 </div>
                 <input type="file" id="image-uploader" accept="image/png, image/jpeg, image/jpg">
-                <label for="image-uploader" class="upload-label">Click to upload or drag &amp; drop</label>
-                <p class="upload-hint">PNG, JPG, JPEG — max 10 MB</p>
+                <label for="image-uploader" class="upload-label" data-i18n="upload_label">Click to upload or drag &amp; drop</label>
+                <p class="upload-hint" data-i18n="upload_hint">PNG, JPG, JPEG — max 10 MB</p>
               </div>
 
               <div class="camera-row">
                 <input type="file" id="camera-capture" accept="image/*" capture="environment" style="display:none">
-                <button class="btn-camera" id="camera-btn">📷 Take Photo</button>
-                <span class="camera-hint">Use device camera</span>
+                <button class="btn-camera" id="camera-btn" data-i18n="camera_btn">📷 Take Photo</button>
+                <span class="camera-hint" data-i18n="camera_hint">Use device camera</span>
               </div>
 
               <div class="or-divider"><span>or</span></div>
@@ -155,7 +160,7 @@
               </div>
               <div id="image-preview" class="image-preview"></div>
               <button class="predict-button btn-primary" id="predict-button">
-                <span class="btn-label">🔬 Analyze Image</span>
+                <span class="btn-label" data-i18n="analyze_btn">🔬 Analyze Image</span>
                 <span class="btn-spinner hidden" id="btn-spinner"></span>
               </button>
             </div>
@@ -257,6 +262,67 @@
         </div>
       </div>
     </section>
+
+    <!-- ══════════════════════════════════════════════════════
+         PHASE 3A — RAG AGRICULTURE EXPERT PANEL
+    ══════════════════════════════════════════════════════ -->
+    <section class="rag-section page-section" id="rag-section">
+      <div class="section-container">
+        <div class="section-header anim-fade-up">
+          <div class="section-tag">RAG Expert · Phase 3A</div>
+          <h2 class="section-title">🌾 Agriculture <span class="gradient-text-green">Knowledge Base</span></h2>
+          <p class="section-sub">Ask any farming question — answers grounded in verified ICAR documents, not guesswork.</p>
+        </div>
+
+        <div class="glass-card rag-chat-panel anim-fade-up" id="rag-chat-panel" style="--delay:.1s">
+
+          <!-- Panel Header -->
+          <div class="rag-chat-header">
+            <div class="rag-avatar">📚</div>
+            <div class="rag-header-info">
+              <h3>Agriculture Expert Assistant</h3>
+              <div class="rag-header-status">
+                <span class="status-dot"></span>
+                Powered by RAG · FAISS + Gemini · ICAR Documents
+              </div>
+            </div>
+            <span class="rag-mode-badge mode-ready" id="rag-mode-badge">🔬 Ready</span>
+          </div>
+
+          <!-- Chat Thread -->
+          <div class="rag-chat-box" id="rag-chat-box"></div>
+
+          <!-- Source Citations (hidden until first RAG answer) -->
+          <div class="rag-sources-panel hidden" id="rag-sources-panel">
+            <div class="rag-sources-title">📄 Sources from Knowledge Base</div>
+            <div class="rag-sources-list" id="rag-sources-list"></div>
+          </div>
+
+          <!-- Input -->
+          <div class="rag-input-row">
+            <input
+              type="text"
+              id="rag-question-input"
+              placeholder="Ask about crop diseases, fertilizers, irrigation, government schemes…"
+              autocomplete="off"
+            >
+            <button id="rag-voice-btn" class="voice-btn" title="Voice input">🎤</button>
+            <button id="rag-send-btn" title="Send question" aria-label="Send">➤</button>
+          </div>
+
+          <!-- Quick Question Buttons -->
+          <div class="rag-quick-btns" id="rag-quick-btns">
+            <button class="rag-quick-btn" data-q="How do I control tomato early blight?">🍅 Tomato Blight Control</button>
+            <button class="rag-quick-btn" data-q="What is the NPK fertilizer dose for tomato?">🌱 NPK for Tomato</button>
+            <button class="rag-quick-btn" data-q="How to set up drip irrigation for vegetables?">💧 Drip Irrigation</button>
+            <button class="rag-quick-btn" data-q="What are the benefits of PM-KISAN scheme?">🏛️ PM-KISAN Scheme</button>
+            <button class="rag-quick-btn" data-q="How to protect tomato crops during monsoon season?">🌧️ Monsoon Advisory</button>
+            <button class="rag-quick-btn" data-q="What pesticide should I use for fruit borer in brinjal?">🪲 Fruit Borer Control</button>
+          </div>
+
+        </div><!-- /rag-chat-panel -->
+      </div><!-- /section-container -->
+    </section><!-- /rag-section -->
 
     <!-- WEATHER + INSIGHTS SECTION -->
     <section class="weather-section" id="weather-section">
@@ -391,38 +457,42 @@
           <h2 class="section-title">📊 Analytics <span class="gradient-text">Dashboard</span></h2>
           <p class="section-sub">Visualize your crop health trends and disease statistics</p>
         </div>
-        <!-- KPI Cards -->
+        <!-- KPI Cards (Phase 2C: 6 KPIs) -->
         <div class="analytics-kpi-grid" id="analytics-kpi-grid">
-          <div class="kpi-card"><div class="kpi-icon">🔬</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total Scans</div></div>
-          <div class="kpi-card"><div class="kpi-icon">🦠</div><div class="kpi-value" id="kpi-diseased">0</div><div class="kpi-label">Diseases Detected</div></div>
-          <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value" id="kpi-healthy">0</div><div class="kpi-label">Healthy Plants</div></div>
-          <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-value" id="kpi-top" style="font-size:0.85rem">—</div><div class="kpi-label">Most Common Disease</div></div>
-          <div class="kpi-card"><div class="kpi-icon">🔴</div><div class="kpi-value" id="kpi-high-risk">0</div><div class="kpi-label">High Risk Scans</div></div>
-          <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value kpi-date" id="kpi-last-scan">—</div><div class="kpi-label">Last Scan</div></div>
+          <div class="kpi-card"><div class="kpi-icon">🔬</div><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label" data-i18n="kpi_total_scans">Total Scans</div></div>
+          <div class="kpi-card"><div class="kpi-icon">✅</div><div class="kpi-value" id="kpi-healthy">0</div><div class="kpi-label" data-i18n="kpi_healthy">Healthy Plants</div></div>
+          <div class="kpi-card"><div class="kpi-icon">🦠</div><div class="kpi-value" id="kpi-diseased">0</div><div class="kpi-label" data-i18n="kpi_diseased">Diseased Plants</div></div>
+          <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-value kpi-date" id="kpi-last-scan">—</div><div class="kpi-label" data-i18n="kpi_last_scan">Last Scan</div></div>
+          <div class="kpi-card kpi-card-accent-red"><div class="kpi-icon">🔴</div><div class="kpi-value" id="kpi-highest-risk" style="font-size:0.8rem">—</div><div class="kpi-label" data-i18n="kpi_highest_risk">Highest Risk Scan</div></div>
+          <div class="kpi-card kpi-card-accent-blue"><div class="kpi-icon">🎯</div><div class="kpi-value" id="kpi-avg-conf">—</div><div class="kpi-label" data-i18n="kpi_avg_confidence">Avg Confidence</div></div>
         </div>
-        <!-- Charts -->
+        <!-- Charts (Phase 2C: 5 charts) -->
         <div class="charts-grid">
           <div class="chart-card glass-card">
-            <h3 class="chart-title">🍕 Health Ratio</h3>
+            <h3 class="chart-title" data-i18n="chart_health_ratio">🍕 Health Ratio</h3>
             <div class="chart-wrap"><canvas id="chart-donut"></canvas></div>
           </div>
           <div class="chart-card glass-card">
-            <h3 class="chart-title">📊 Disease Distribution</h3>
+            <h3 class="chart-title" data-i18n="chart_disease_dist">📊 Disease Distribution</h3>
             <div class="chart-wrap"><canvas id="chart-bar"></canvas></div>
           </div>
           <div class="chart-card glass-card">
-            <h3 class="chart-title">⚠️ Risk Distribution</h3>
+            <h3 class="chart-title" data-i18n="chart_risk_dist">⚠️ Risk Distribution</h3>
             <div class="chart-wrap"><canvas id="chart-risk"></canvas></div>
           </div>
           <div class="chart-card glass-card">
-            <h3 class="chart-title">📈 Weekly Scan Trend</h3>
+            <h3 class="chart-title" data-i18n="chart_scan_trend">📈 30-Day Scan Trend</h3>
             <div class="chart-wrap"><canvas id="chart-line"></canvas></div>
+          </div>
+          <div class="chart-card glass-card chart-card-wide">
+            <h3 class="chart-title" data-i18n="chart_monthly">📅 Monthly Progress</h3>
+            <div class="chart-wrap"><canvas id="chart-monthly"></canvas></div>
           </div>
         </div>
         <!-- Recent Activity Timeline -->
-        <div class="activity-section glass-card" id="activity-section" style="margin-top:24px;padding:28px;display:none">
-          <h3 class="chart-title">🕐 Recent Activity</h3>
-          <div class="activity-list" id="activity-list"></div>
+        <div class="activity-section glass-card" id="activity-section" style="margin-top:24px;padding:28px;">
+          <h3 class="chart-title" data-i18n="recent_activity_title">🕐 Recent Activity</h3>
+          <div class="activity-list" id="activity-list"><div class="activity-empty">No recent scans to show.</div></div>
         </div>
         <div class="empty-state hidden" id="analytics-empty">
           <div class="empty-icon">📊</div>
@@ -455,17 +525,21 @@
               <span class="star" data-val="5">★</span>
             </div>
             <p class="star-label" id="star-label">Click to rate</p>
-            <textarea id="feedback-text" class="feedback-textarea" placeholder="Share your thoughts (optional)..." rows="4"></textarea>
-            <button class="btn-primary feedback-submit-btn" id="feedback-submit-btn">Submit Feedback</button>
+            <textarea id="feedback-text" class="feedback-textarea" data-i18n-placeholder="feedback_textarea_placeholder" placeholder="Share your thoughts (min 10 characters, max 1000)..." rows="4" maxlength="1000"></textarea>
+            <div class="feedback-char-row"><span class="feedback-char-count" id="feedback-char-count">0 / 1000</span></div>
+            <button class="btn-primary feedback-submit-btn" id="feedback-submit-btn" data-i18n="feedback_submit_btn">Submit Feedback</button>
           </div>
           <!-- Insights -->
           <div class="feedback-insights">
             <div class="glass-card feedback-stats-card">
-              <h3 class="feedback-form-title">Feedback Insights</h3>
-              <div class="insight-row"><div class="insight-big" id="avg-rating">—</div><div class="insight-label">Average Rating</div></div>
-              <div class="insight-row"><div class="insight-big" id="total-feedback">0</div><div class="insight-label">Total Responses</div></div>
+              <h3 class="feedback-form-title" data-i18n="feedback_stats_title">Feedback Insights</h3>
+              <div class="insight-row"><div class="insight-big" id="avg-rating">—</div><div class="insight-label" data-i18n="feedback_avg_rating">Average Rating</div></div>
+              <div class="insight-row"><div class="insight-big" id="total-feedback">0</div><div class="insight-label" data-i18n="feedback_total">Total Responses</div></div>
             </div>
-            <div class="feedback-list" id="feedback-list"></div>
+            <div class="glass-card feedback-stats-card" style="margin-top:16px">
+              <h3 class="feedback-form-title" data-i18n="feedback_my_feedback">My Feedback</h3>
+              <div class="feedback-list" id="feedback-list"></div>
+            </div>
           </div>
         </div>
       </div>

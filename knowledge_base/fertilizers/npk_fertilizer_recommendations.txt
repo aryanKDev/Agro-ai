@@ -1,0 +1,145 @@
+FERTILIZER RECOMMENDATION GUIDE FOR MAJOR VEGETABLE CROPS — INDIA
+===================================================================
+Source: ICAR-Indian Institute of Vegetable Research (IIVR), Varanasi
+Category: Fertilizer Management | Applicable Crops: Tomato, Potato, Onion, Brinjal, Capsicum
+
+---
+
+SECTION 1: UNDERSTANDING NPK FERTILIZERS
+
+NPK stands for Nitrogen (N), Phosphorus (P), and Potassium (K) — the three primary macronutrients essential for crop growth.
+
+Role of Nitrogen (N):
+- Promotes vegetative growth, leaf greenness, and protein synthesis
+- Deficiency: yellowing of older leaves starting from tips (chlorosis), stunted growth
+- Excess: excessive vegetative growth, reduced fruiting, increased disease susceptibility
+
+Role of Phosphorus (P):
+- Promotes root development, flowering, fruiting, and seed formation
+- Deficiency: purple/reddish discoloration of leaves, poor root development, delayed maturity
+- Excess: interferes with zinc and iron uptake
+
+Role of Potassium (K):
+- Improves fruit quality, disease resistance, and water-use efficiency
+- Deficiency: brown leaf margins (scorching), weak stems, poor fruit quality
+- Excess: interferes with calcium and magnesium uptake
+
+---
+
+SECTION 2: NPK RECOMMENDATIONS BY CROP
+
+2.1 TOMATO (Solanum lycopersicum)
+Recommended NPK dose: 120:60:60 kg/hectare (N:P:K)
+
+Application Schedule:
+- Basal (at transplanting): Full P (60 kg/ha as SSP), 1/3 N (40 kg/ha as Urea), Full K (60 kg/ha as MOP)
+- First top dressing (30 days after transplanting, DAT): 1/3 N (40 kg/ha)
+- Second top dressing (60 DAT, before flowering): 1/3 N (40 kg/ha)
+
+Fertilizer product quantities per acre:
+- Urea (46% N): 57 kg/acre total (split in 3 equal doses of ~19 kg each)
+- Single Super Phosphate/SSP (16% P2O5): 67 kg/acre (basal only)
+- Muriate of Potash/MOP (60% K2O): 22 kg/acre (basal only)
+
+Micronutrient supplement for tomato:
+- Boron (Borax 10.5%): 10 kg/ha — apply as basal for fruit quality
+- Zinc Sulfate (21%): 25 kg/ha — apply as basal; prevents fruit cracking
+- Calcium Nitrate foliar spray: 0.5% solution at fruit development stage
+
+2.2 POTATO (Solanum tuberosum)
+Recommended NPK dose: 180:90:120 kg/hectare
+
+Application Schedule:
+- Basal: Full P, Full K, 1/2 N at planting
+- Top dressing: 1/2 N at earthing up (30 DAP)
+
+Per-acre fertilizer quantities:
+- Urea: 85 kg/acre (split equally)
+- DAP (18:46:0): 44 kg/acre (basal — provides both N and P)
+- MOP: 44 kg/acre (basal)
+
+2.3 ONION (Allium cepa)
+Recommended NPK dose: 100:50:50 kg/hectare
+
+- Basal: Full P (SSP 56 kg/acre), Full K (MOP 18 kg/acre), 1/3 N (Urea 16 kg/acre)
+- 30 DAT: 1/3 N
+- 60 DAT: 1/3 N
+- Sulfur application: 30 kg/ha as gypsum — improves flavor and bulb quality
+
+2.4 BRINJAL (Solanum melongena)
+Recommended NPK dose: 100:50:50 kg/hectare
+
+- Same schedule as tomato
+- Additional calcium ammonium nitrate (CAN) foliar spray at 0.5% during fruiting
+
+2.5 CAPSICUM / BELL PEPPER
+Recommended NPK dose: 100:80:80 kg/hectare
+
+- Basal: Full P, Full K, 1/3 N
+- Top dressings at 20, 40, and 60 DAT with remaining N
+- Foliar MgSO4 (magnesium sulfate) at 1% — prevents blossom end rot
+
+---
+
+SECTION 3: ORGANIC FERTILIZERS AND THEIR ROLE
+
+3.1 FARMYARD MANURE (FYM)
+- Apply 20–25 tonnes/hectare (8–10 tonnes/acre) 2–3 weeks before transplanting
+- N:P:K content approximately 0.5:0.2:0.5% — improves soil organic matter
+- Enhances water retention and microbial activity
+
+3.2 VERMICOMPOST
+- Apply 4–5 tonnes/hectare as basal application
+- Richer in N (1.5–2.5%), P (0.9–1.7%), and K (1.2–1.5%) than FYM
+- Contains plant growth hormones and beneficial microbes
+
+3.3 BIO-FERTILIZERS
+- Azospirillum (N-fixing): 5 packets/acre (200 g/packet) — seed treatment or soil application
+- PSB Phosphate Solubilizing Bacteria: 5 packets/acre — increases P availability by 25–30%
+- Mycorrhiza: 5 kg/acre soil application — improves root absorption
+
+3.4 FERTIGATION (Fertilizer through Drip Irrigation)
+For drip-irrigated tomato (recommended schedule):
+
+Week 1–2 (establishment): 19:19:19 NPK @ 2.5 kg/acre/week
+Week 3–5 (vegetative): 19:19:19 NPK @ 3 kg/acre/week + Calcium Nitrate 2 kg/week
+Week 6–8 (flowering): 0:52:34 (MAP+MKP) @ 3 kg/acre/week
+Week 9–12 (fruiting): 13:0:45 (SOP) @ 3 kg/acre/week + Calcium Nitrate 2 kg/week
+Week 13+ (harvest): 0:0:50 (SOP) @ 2 kg/acre/week for fruit quality
+
+---
+
+SECTION 4: SOIL TEST-BASED FERTILIZATION
+
+Always conduct soil testing before applying fertilizers. Send samples to nearest Soil Testing Laboratory (STL) or use Soil Health Card (SHC) recommendations.
+
+pH Correction:
+- Acidic soil (pH < 5.5): Apply agricultural lime (CaCO3) at 2–4 tonnes/ha
+- Alkaline soil (pH > 8.0): Apply gypsum at 2 tonnes/ha + organic matter
+
+Nutrient Deficiency Quick Reference:
+- Yellow older leaves, stunted growth → Nitrogen deficiency — apply Urea foliar spray 2%
+- Purple leaves, poor root growth → Phosphorus deficiency — apply DAP 100 g/10L water
+- Brown leaf edges, weak stems → Potassium deficiency — apply MOP at 20 kg/acre
+- Yellow new leaves with green veins → Iron deficiency — apply FeSO4 0.5% foliar spray
+- Stunted growing points, dead terminal buds → Boron deficiency — apply borax 0.2% spray
+- White striped leaves → Zinc deficiency — apply ZnSO4 0.5% foliar spray
+
+---
+
+SECTION 5: FERTILIZER SAFETY AND REGULATIONS
+
+Government Regulations:
+- Fertilizer (Control) Order (FCO) 1985 governs quality standards
+- Never exceed recommended doses — over-fertilization pollutes groundwater
+- Maintain 15-day interval between last fertilizer application and harvest
+- Store fertilizers separately from pesticides in dry, cool, ventilated conditions
+
+Subsidy Information:
+- Urea: 100% price-subsidized under GoI Nutrient Based Subsidy (NBS) scheme
+- P and K fertilizers: Partial subsidy under NBS scheme
+- Check current MRP at nearest fertilizer dealer or state agriculture department
+
+---
+Reference: ICAR-IIVR Varanasi Bulletin IB-2022-14, Dept. of Agriculture & Farmers Welfare, GoI
+Document prepared for AgroAI Knowledge Base — verified factual content

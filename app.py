@@ -32,6 +32,7 @@ import pdf_generator
 import risk_engine
 from services.weather_service  import get_weather, get_weather_by_coords
 from services.farming_insights import generate_farming_insights
+from services.rag_service      import get_rag_service          # Phase 3A RAG
 
 # ---------------------------------------------------------------------------
 # Google Generative AI SDK  (pip install google-generativeai)
@@ -119,6 +120,22 @@ chat_sessions: dict = {}
 
 # In-memory weather cache  { city_lower -> {data, expires_at} }
 _weather_cache: dict = {}
+
+# ---------------------------------------------------------------------------
+# Phase 3A — RAG Service (loaded once at startup)
+# ---------------------------------------------------------------------------
+try:
+    _rag = get_rag_service()
+    if _rag.is_ready():
+        logger.info("RAG service ready — FAISS vectorstore loaded.")
+    else:
+        logger.warning(
+            "RAG service initialised but vectorstore not found. "
+            "Run: python ingest.py  to build the knowledge base index."
+        )
+except Exception as _rag_err:
+    logger.error(f"RAG service failed to initialise: {_rag_err}")
+    _rag = None
 
 
 # ===========================================================================
@@ -520,6 +537,87 @@ def dashboard_api():
 
 
 # ---------------------------------------------------------------------------
+# Phase 2B — MongoDB Feedback API
+# ---------------------------------------------------------------------------
+
+@app.route("/api/feedback", methods=["POST"])
+@jwt_required()
+def submit_feedback():
+    """
+    POST /api/feedback  (JWT required)
+    Body: { rating: int(1-5), message: str(10-1000 chars) }
+    Returns: { success, id }
+    """
+    try:
+        user_id = get_jwt_identity()
+        user    = database.get_user_by_id(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        data    = request.get_json() or {}
+        rating  = data.get("rating")
+        message = (data.get("message") or "").strip()
+
+        # Validate rating
+        if rating is None or not isinstance(rating, int) or not (1 <= rating <= 5):
+            return jsonify({"error": "Rating must be an integer between 1 and 5."}), 400
+
+        # Validate message
+        if len(message) < 10:
+            return jsonify({"error": "Message must be at least 10 characters."}), 400
+        if len(message) > 1000:
+            return jsonify({"error": "Message cannot exceed 1000 characters."}), 400
+
+        feedback_id = database.save_feedback(
+            user_id = user_id,
+            name    = user.get("name", "Anonymous"),
+            email   = user.get("email", ""),
+            rating  = rating,
+            message = message,
+        )
+
+        if not feedback_id:
+            return jsonify({"error": "Failed to save feedback. Database may be offline."}), 500
+
+        logger.info(f"Feedback submitted | user: {user_id} | rating: {rating}")
+        return jsonify({"success": True, "id": feedback_id})
+
+    except Exception as e:
+        logger.error(f"Submit feedback error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/feedback/my", methods=["GET"])
+@jwt_required()
+def get_my_feedback():
+    """
+    GET /api/feedback/my  (JWT required)
+    Returns the current user's feedback submissions, newest first.
+    """
+    try:
+        user_id   = get_jwt_identity()
+        feedbacks = database.get_my_feedbacks(user_id)
+        return jsonify({"success": True, "feedbacks": feedbacks})
+    except Exception as e:
+        logger.error(f"Get my feedback error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/feedback/stats", methods=["GET"])
+def get_feedback_stats():
+    """
+    GET /api/feedback/stats  (public, no auth required)
+    Returns aggregate feedback statistics: total, avg_rating, distribution.
+    """
+    try:
+        stats = database.get_feedback_stats()
+        return jsonify({"success": True, **stats})
+    except Exception as e:
+        logger.error(f"Get feedback stats error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
 # Phase 1C — Real-Time Weather
 # ---------------------------------------------------------------------------
 
@@ -728,7 +826,16 @@ def chat():
         return jsonify({"response": local_answer})
 
     # Layer 2: Gemini 1.5 Flash
+    # Phase 2A: Inject language instruction if Hindi mode
+    lang = (data.get("language") or "en").lower()
+    hindi_prefix = (
+        "CRITICAL INSTRUCTION: You MUST respond ENTIRELY in Hindi (हिंदी). "
+        "Use simple, farmer-friendly Hindi language that rural farmers can understand. "
+        "Do NOT use any English except for scientific/technical terms that have no Hindi equivalent.\n\n"
+    ) if lang == "hi" else ""
+
     system_instruction = (
+        hindi_prefix +
         "You are an intelligent and empathetic agriculture assistant specializing in plant diseases. "
         "Your mission: help farmers, gardeners, and students understand plant health, "
         "provide actionable treatment and prevention advice, and share general farming tips. "
@@ -785,6 +892,115 @@ def chat():
             f"_Just type your question and I'll answer right away!_"
         )
         return jsonify({"response": msg, "mode": "local"})
+
+
+# ===========================================================================
+# Phase 3A — RAG Agriculture Expert Routes
+# ===========================================================================
+
+@app.route("/api/rag-chat", methods=["POST"])
+def rag_chat():
+    """
+    POST /api/rag-chat
+    Body: { "question": str, "language": "en"|"hi" }
+
+    Flow:
+      1. FAISS vector search → top-5 relevant agriculture document chunks
+      2. Build grounded Gemini prompt with retrieved context
+      3. Return answer + source citations
+      4. Persist to chat_history (user-scoped if JWT present)
+      5. Fallback to direct Gemini if no relevant chunks found
+
+    Authentication: Optional JWT (chat history saved only when authenticated)
+    """
+    data     = request.get_json() or {}
+    question = (data.get("question") or "").strip()
+    language = (data.get("language") or "en").lower()
+
+    if not question:
+        return jsonify({"error": "question is required"}), 400
+
+    if language not in ("en", "hi"):
+        language = "en"
+
+    user_id = get_optional_user_id()
+    logger.info(f"[RAG] question={question!r:.60} | lang={language} | user={user_id!r}")
+
+    # ── Call RAG service ──────────────────────────────────────────────────
+    rag = _rag or get_rag_service()
+    if rag is None:
+        return jsonify({"error": "RAG service unavailable"}), 503
+
+    try:
+        result = rag.answer_agriculture_query(question=question, language=language)
+    except Exception as e:
+        logger.error(f"[RAG] Query failed: {e}")
+        return jsonify({"error": "RAG query failed", "detail": str(e)}), 500
+
+    answer  = result.get("answer", "")
+    sources = result.get("sources", [])
+    mode    = result.get("mode", "fallback")
+
+    # ── Persist to MongoDB (best-effort) ─────────────────────────────────
+    try:
+        database.save_chat_message(
+            user_id=user_id,
+            question=question,
+            answer=answer,
+            sources=sources,
+            mode=mode,
+        )
+    except Exception as db_err:
+        logger.warning(f"[RAG] chat_history save failed (non-fatal): {db_err}")
+
+    logger.info(f"[RAG] mode={mode} | sources={len(sources)}")
+    return jsonify({"answer": answer, "sources": sources, "mode": mode})
+
+
+@app.route("/api/rag-chat/history", methods=["GET"])
+def rag_chat_history():
+    """
+    GET /api/rag-chat/history
+    Returns last 10 RAG chat messages for the current user.
+    Authentication: Optional JWT.
+    """
+    try:
+        user_id = get_optional_user_id()
+        limit   = min(int(request.args.get("limit", 10)), 50)
+        history = database.get_chat_history(user_id=user_id, limit=limit)
+        return jsonify({"success": True, "history": history})
+    except Exception as e:
+        logger.error(f"[RAG] history fetch error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/rebuild-index", methods=["POST"])
+@jwt_required()
+def admin_rebuild_index():
+    """
+    POST /api/admin/rebuild-index  (JWT required)
+    Hot-rebuilds the FAISS vector index from knowledge_base/ documents.
+    Reloads the singleton so new documents are searchable immediately.
+    No server restart required after this endpoint is called.
+    """
+    global _rag
+    try:
+        from ingest import run_ingestion
+        logger.info("[ADMIN] Rebuilding FAISS index …")
+        chunk_count = run_ingestion()          # re-ingests all documents
+        if _rag:
+            _rag.reload()                      # hot-reload vectorstore into singleton
+        else:
+            _rag = get_rag_service()
+        logger.info(f"[ADMIN] Rebuild complete — {chunk_count} chunks indexed.")
+        return jsonify({
+            "success":        True,
+            "chunks_indexed": chunk_count,
+            "message":        f"Knowledge base rebuilt. {chunk_count} chunks now searchable.",
+        })
+    except Exception as e:
+        logger.error(f"[ADMIN] Rebuild failed: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 # ===========================================================================

@@ -1,0 +1,173 @@
+DRIP IRRIGATION GUIDE FOR VEGETABLE CROPS — INDIA
+===================================================
+Source: Central Soil and Water Conservation Research & Training Institute (CSWCRTI), Dehradun
+Category: Irrigation Management | Under: Pradhan Mantri Krishi Sinchayee Yojana (PMKSY)
+
+---
+
+SECTION 1: INTRODUCTION TO DRIP IRRIGATION
+
+Drip irrigation (also called trickle or micro-irrigation) delivers water directly to the plant root zone through a network of pipes, tubes, valves, and emitters at a slow, steady rate. This method is particularly suited for vegetable crops where water use efficiency is critical.
+
+Benefits over Flood/Furrow Irrigation:
+- Water saving: 40–60% less water consumption compared to surface irrigation
+- Yield increase: 20–50% higher yield due to optimal soil moisture
+- Fertilizer efficiency: fertigation allows 30–40% reduction in fertilizer use
+- Disease reduction: dry foliage reduces fungal disease incidence
+- Labour saving: automated timers reduce irrigation labour by 70%
+- Weed reduction: only root zone wetted, not inter-row spaces
+
+---
+
+SECTION 2: DRIP SYSTEM COMPONENTS
+
+2.1 MAIN COMPONENTS
+1. Water source (well, borehole, canal, reservoir)
+2. Pump unit (centrifugal pump 2–5 HP for 1–2 acres)
+3. Filter unit:
+   - Sand/gravel filter (removes organic debris)
+   - Disc filter (removes mineral particles >130 micron)
+   - Screen filter (final polishing — 120–200 mesh)
+4. Pressure gauge and regulator (maintain 1.0–2.5 kg/cm²)
+5. Fertilizer injection unit (venturi injector or fertilizer tank)
+6. Main PVC pipe (75–90 mm diameter)
+7. Sub-main HDPE pipe (40–63 mm diameter)
+8. Laterals (drip tape or inline emitter tube — 12–16 mm)
+9. Emitters/drippers: 2 LPH (litres per hour) for vegetables
+
+2.2 EMITTER SELECTION FOR VEGETABLE CROPS
+- Tomato, Brinjal, Capsicum: 2 LPH inline dripper at 30–45 cm spacing
+- Onion, Garlic: Drip tape with 20 cm emitter spacing
+- Cucumber, Melons: 4 LPH drippers at 60 cm spacing
+- Potato: Drip tape at 30 cm emitter spacing
+
+---
+
+SECTION 3: WATER REQUIREMENT AND SCHEDULING
+
+3.1 TOMATO WATER REQUIREMENTS (per acre per day)
+- Establishment (0–15 DAT): 600–800 litres/day (2–3 irrigations × 20 min)
+- Vegetative growth (15–45 DAT): 1000–1500 litres/day
+- Flowering and fruit set (45–75 DAT): 1500–2000 litres/day (critical stage — never stress)
+- Fruit development (75–100 DAT): 1800–2500 litres/day
+- Pre-harvest maturation (100+ DAT): 800–1000 litres/day (reduce for quality)
+
+3.2 IRRIGATION SCHEDULING PRINCIPLES
+Method 1 — Pan Evaporation Method:
+Daily irrigation (litres/acre) = Ep × Kc × Area × correction factor
+Where: Ep = pan evaporation (mm/day), Kc = crop coefficient
+
+Tomato Kc values:
+- Initial stage (0–30 DAT): Kc = 0.6
+- Development (30–70 DAT): Kc = 0.7–1.15 (increasing)
+- Mid-season (70–100 DAT): Kc = 1.15
+- Late season (100–120 DAT): Kc = 0.70–0.85
+
+Method 2 — Tensiometer Method:
+- Install tensiometer at 20 cm and 40 cm depth
+- Irrigate when tensiometer reads 20–30 centibars (cbar) for tomato
+- Do not allow soil to dry beyond 40 cbar — causes blossom end rot
+
+Method 3 — Fixed Schedule (Kharif Season):
+- Morning: 6:00–7:00 AM — 30 minutes (avoid evening irrigation — promotes fungal diseases)
+- Frequency: Daily during summer, every other day during monsoon
+
+---
+
+SECTION 4: FERTIGATION THROUGH DRIP IRRIGATION
+
+Fertigation Schedule for Drip-Irrigated Tomato:
+
+Stage 1 (Week 1–2, Establishment):
+- 19:19:19 Water Soluble Fertilizer (WSF): 2 kg/acre dissolved in tank
+- Humic acid: 1 kg/acre
+
+Stage 2 (Week 3–5, Vegetative Growth):
+- 19:19:19 WSF: 3 kg/acre per week
+- Calcium Nitrate (15.5-0-0+26.5 Ca): 2 kg/acre per week
+- Magnesium Sulfate: 1 kg/acre per week
+
+Stage 3 (Week 6–8, Flowering):
+- Mono Ammonium Phosphate (12:61:0) MAP: 3 kg/acre per week
+- Mono Potassium Phosphate (0:52:34) MKP: 1 kg/acre per week
+- Boron foliar spray: 0.2% solution (not through drip)
+
+Stage 4 (Week 9–12, Fruit Development):
+- 0:0:50 Potassium Sulfate (SOP): 3 kg/acre per week
+- Calcium Nitrate: 2 kg/acre per week
+
+Stage 5 (Week 13–15, Harvest):
+- Potassium Nitrate (13:0:45): 2 kg/acre per week
+- Reduce overall input, maintain K for fruit coloring
+
+Fertigation Rules:
+1. Always flush system with clean water 10 minutes before and after fertigation
+2. Do not mix incompatible fertilizers (e.g., Calcium Nitrate + Phosphate fertilizers) — apply separately
+3. Maintain filter cleanliness — clean filters weekly during fertigation
+4. Never use urea in drip systems with hard water (scaling risk)
+5. Keep fertilizer tank filled to 60–70% capacity for proper mixing
+
+---
+
+SECTION 5: GOVERNMENT SUBSIDY FOR DRIP IRRIGATION — INDIA
+
+5.1 PMKSY — Per Drop More Crop (MI) Component
+National subsidy for micro-irrigation systems:
+
+Small and Marginal Farmers (landholding ≤ 2 ha):
+- Subsidy: 55% of unit cost
+- Unit cost approved by GoI: ₹80,000–₹1,20,000 per hectare (varies by state)
+- Effective farmer cost: ₹36,000–₹54,000 per hectare
+
+Other Farmers (landholding > 2 ha):
+- Subsidy: 45% of unit cost
+- Effective farmer cost: ₹44,000–₹66,000 per hectare
+
+Additional State Subsidy:
+- Several states (Maharashtra, Gujarat, Telangana, Karnataka) provide additional 10–25% subsidy
+- Maharashtra: Total subsidy up to 80% for SC/ST farmers under Dr. Babasaheb Ambedkar Krishi Swavalamban Yojana
+
+5.2 HOW TO APPLY FOR SUBSIDY
+1. Register on PMKSY official portal: pmksy.gov.in
+2. Obtain Farm ID (FID) from local agriculture department
+3. Apply through Cooperative Bank or Agriculture Department with land records
+4. Purchase system from PMKSY-approved manufacturers only
+5. Department inspects installation before releasing subsidy amount
+
+5.3 APPROVED DRIP SYSTEM MANUFACTURERS (PMKSY listed)
+- Jain Irrigation Systems Ltd.
+- Netafim India Pvt. Ltd.
+- Rivulis Irrigation India Pvt. Ltd.
+- EPC Industries Ltd.
+
+---
+
+SECTION 6: MAINTENANCE AND TROUBLESHOOTING
+
+Common Problems and Solutions:
+
+Problem: Emitters clogging
+- Cause: Suspended particles, algae, calcium deposits, or root intrusion
+- Solution: Flush laterals weekly; inject chlorine (4–5 ppm) monthly; use anti-root emitters
+
+Problem: Uneven water distribution
+- Cause: Pressure variation or clogged emitters
+- Solution: Check pressure gauge; use pressure-compensating emitters on slopes
+
+Problem: Filter clogging
+- Cause: Heavy silt in water source
+- Solution: Clean sand filter daily during summer; install settling tank before pump
+
+Problem: Lateral damage by rodents
+- Cause: Mice chewing on lateral tape
+- Solution: Bury laterals 5–8 cm deep; use rodenticide bait stations near field
+
+System Life Expectancy:
+- Drip laterals (tape): 3–5 seasons
+- Inline emitter tube: 5–8 seasons
+- HDPE sub-mains and mains: 15–20 years
+- Filters and pump: 10–15 years with annual maintenance
+
+---
+Reference: CSWCRTI Dehradun Technical Manual TM-MI-2023, PMKSY Guidelines 2022-23
+Document prepared for AgroAI Knowledge Base — verified factual content

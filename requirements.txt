@@ -14,3 +14,10 @@ dnspython
 reportlab
 qrcode[pil]
 bcrypt
+
+# ── Phase 3A: RAG Agriculture Expert ─────────────
+langchain
+langchain-community
+faiss-cpu
+sentence-transformers
+pypdf

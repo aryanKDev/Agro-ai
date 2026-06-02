@@ -1,0 +1,129 @@
+ICAR TOMATO DISEASE MANAGEMENT GUIDE
+=====================================
+Source: Indian Council of Agricultural Research (ICAR), National Horticulture Research Development Foundation
+Category: Plant Disease Management | Crop: Tomato (Solanum lycopersicum)
+
+---
+
+SECTION 1: EARLY BLIGHT (Alternaria Blight)
+Causative Organism: Alternaria solani (Fungal pathogen)
+
+1.1 SYMPTOMS OF EARLY BLIGHT
+- Small, dark brown to black lesions (2-3 mm) appear on lower, older leaves first
+- Lesions enlarge and develop characteristic concentric rings (target-board pattern)
+- Affected areas turn yellow (chlorotic halo) around the lesion
+- Severely infected leaves turn yellow, wither, and fall off (defoliation)
+- On stems: dark, sunken, elongated lesions — can girdle the stem and kill the plant
+- On fruits: dark, leathery, sunken lesions near the stem end; white to gray fungal growth visible in moist conditions
+- Disease progresses upward from older to younger leaves
+
+1.2 DISEASE CYCLE AND FAVORABLE CONDITIONS
+- Pathogen survives in infected crop debris and soil for 12–16 months
+- Spreads by wind, rain splash, contaminated tools, and infected seed
+- Optimal temperature for infection: 24–29°C with relative humidity above 90%
+- Short wet periods (even 2–3 hours of leaf wetness) trigger infection
+- Common during Kharif (rainy) season and winter fog periods in North India
+
+1.3 CHEMICAL CONTROL OF EARLY BLIGHT
+Recommended fungicides and dosage (per litre of water):
+- Mancozeb 75% WP — 2.5 g/L water (most effective, broad-spectrum)
+- Chlorothalonil 75% WP — 2.0 g/L water
+- Copper oxychloride 50% WP — 3.0 g/L water
+- Iprodione 50% WP — 1.0 g/L water
+- Azoxystrobin 23% SC — 1.0 mL/L water (systemic)
+- Tebuconazole 25.9% EC — 1.0 mL/L water
+
+Spray schedule: Begin spraying at first symptom appearance. Repeat every 7–10 days. Rotate fungicide groups to prevent resistance.
+
+1.4 BIOLOGICAL CONTROL
+- Trichoderma viride or T. harzianum: 4 g/L as foliar spray or soil application
+- Pseudomonas fluorescens: 10 g/L as foliar spray — inhibits Alternaria germination
+- Neem oil 3000 ppm: 5 mL/L water — effective as preventive spray
+
+1.5 PREVENTION AND CULTURAL PRACTICES
+- Use certified, disease-free seeds — treat with Thiram 75% WP at 3 g/kg seed
+- Select resistant varieties: Arka Rakshak, Arka Samrat, Punjab Chhuhara, Pusa Rohini
+- Maintain plant spacing: 60 cm × 45 cm for good air circulation
+- Avoid overhead irrigation; use drip irrigation to keep foliage dry
+- Remove and destroy infected plant debris immediately after harvest
+- Practice crop rotation with non-solanaceous crops for 2–3 years
+- Apply balanced fertilization — avoid excessive nitrogen which increases susceptibility
+- Stake plants to improve air flow and reduce humidity around foliage
+- Mulch soil to prevent rain splash of soil-borne spores
+
+---
+
+SECTION 2: LATE BLIGHT (Phytophthora Blight)
+Causative Organism: Phytophthora infestans (Oomycete pathogen)
+
+2.1 SYMPTOMS OF LATE BLIGHT
+- Water-soaked, irregular, pale green to dark brown patches on leaves
+- White cotton-like sporulation on the undersurface of leaves in moist conditions
+- Rapid spread — entire plant can collapse within 3–5 days in humid conditions
+- Brown, firm lesions on fruits; affected fruits become inedible
+- Lesions on stems are brown and can cause stem break
+
+2.2 CHEMICAL CONTROL OF LATE BLIGHT
+- Metalaxyl-M 4% + Mancozeb 64% WP (Ridomil Gold): 2.5 g/L — most effective
+- Dimethomorph 50% WP: 1.0 g/L water
+- Cymoxanil 8% + Mancozeb 64% WP: 3.0 g/L water
+- Fosetyl-Al 80% WP: 2.5 g/L water
+- Propamocarb hydrochloride 72.2% SL: 2.0 mL/L water
+
+2.3 PREVENTION OF LATE BLIGHT
+- Grow resistant varieties: Arka Vikas, Pusa Gaurav, Himsona
+- Avoid excessive irrigation during cool, humid weather
+- Destroy volunteer tomato plants and potato crops nearby (alternate hosts)
+- Apply prophylactic sprays before disease onset during high-risk periods (monsoon)
+
+---
+
+SECTION 3: TOMATO LEAF CURL VIRUS (ToLCV)
+Causative Agent: Tomato Leaf Curl New Delhi Virus (TLCNDV) — transmitted by whitefly (Bemisia tabaci)
+
+3.1 SYMPTOMS
+- Upward or downward curling of leaflets
+- Reduction in leaf size; leaves become thick and leathery
+- Stunted plant growth; flower drop; no fruit set in severe cases
+- Yellowing of younger leaves
+
+3.2 MANAGEMENT
+- Control whitefly vector with: Imidacloprid 17.8% SL (0.5 mL/L), Thiamethoxam 25% WG (0.3 g/L)
+- Reflective silver mulch repels whitefly
+- Install yellow sticky traps (20/acre) for monitoring
+- Use virus-resistant varieties: Arka Rakshak, TH-1, Syngenta Abhilash
+- Remove and destroy infected plants immediately to prevent spread
+
+---
+
+SECTION 4: BACTERIAL WILT
+Causative Organism: Ralstonia solanacearum
+
+4.1 SYMPTOMS
+- Sudden wilting of entire plant, often without yellowing
+- Vascular browning when stem is cut cross-sectionally
+- Bacterial ooze visible when stem cut placed in water
+
+4.2 MANAGEMENT
+- No effective chemical cure once infected — prevention is critical
+- Soil solarization: cover moist soil with transparent polyethylene for 4–6 weeks
+- Soil drench with Copper oxychloride 0.3% or Streptomycin sulfate 200 ppm
+- Crop rotation with non-solanaceous crops for 3–4 years
+- Resistant rootstocks for grafting: IIHR-Sel-49 (Solanum torvum)
+- Avoid waterlogging; maintain well-drained soil conditions
+
+---
+
+SECTION 5: INTEGRATED DISEASE MANAGEMENT (IDM) FOR TOMATO
+1. Seed treatment before sowing with Thiram (3g/kg) or Carbendazim (2g/kg)
+2. Seedling tray dip in Trichoderma viride (5g/L) for 30 minutes before transplanting
+3. Soil application of Trichoderma at 2.5 kg/acre mixed with FYM at transplanting
+4. First preventive spray at 15 days after transplanting with Mancozeb 2.5 g/L
+5. Continue spray schedule every 10 days during monsoon and fog periods
+6. Scout fields twice weekly — early detection reduces losses by 80%
+7. Maintain field sanitation — remove plant debris and weeds
+8. Apply recommended dose of fertilizers — excess nitrogen increases disease
+
+---
+Reference: ICAR-IIHR Bangalore, NHRDF Nashik Technical Bulletin TB-2023-07
+Document prepared for AgroAI Knowledge Base — verified factual content

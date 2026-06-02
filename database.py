@@ -2,8 +2,9 @@
 AgroAI — MongoDB Database Connection Manager
 =============================================
 Handles connection to MongoDB Atlas and provides CRUD operations for:
-  - scans collection (user-scoped + legacy support)
-  - users collection (SaaS multi-user)
+  - scans       collection (user-scoped + legacy support)
+  - users       collection (SaaS multi-user)
+  - feedbacks   collection (Phase 2B — real feedback system)
 """
 
 import os
@@ -20,21 +21,25 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-MONGO_URI        = os.getenv("MONGO_URI")
-DB_NAME          = "agroai"
-COLLECTION_NAME  = "scans"
-USERS_COLLECTION = "users"
+MONGO_URI             = os.getenv("MONGO_URI")
+DB_NAME               = "agroai"
+COLLECTION_NAME       = "scans"
+USERS_COLLECTION      = "users"
+FEEDBACKS_COLLECTION  = "feedbacks"
+CHAT_HISTORY_COLLECTION = "chat_history"  # Phase 3A RAG
 
-db_client  = None
-db         = None
-scans_col  = None
-users_col  = None
-is_connected = False
+db_client        = None
+db               = None
+scans_col        = None
+users_col        = None
+feedbacks_col    = None
+chat_history_col = None  # Phase 3A RAG
+is_connected     = False
 
 
 def init_db():
     """Initialize MongoDB Atlas Connection."""
-    global db_client, db, scans_col, users_col, is_connected
+    global db_client, db, scans_col, users_col, feedbacks_col, chat_history_col, is_connected
 
     if not MONGO_URI:
         logger.warning("MONGO_URI not defined in .env. MongoDB features will run in offline simulation mode.")
@@ -45,12 +50,18 @@ def init_db():
         db_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
         db_client.admin.command('ping')
 
-        db        = db_client[DB_NAME]
-        scans_col = db[COLLECTION_NAME]
-        users_col = db[USERS_COLLECTION]
+        db               = db_client[DB_NAME]
+        scans_col        = db[COLLECTION_NAME]
+        users_col        = db[USERS_COLLECTION]
+        feedbacks_col    = db[FEEDBACKS_COLLECTION]
+        chat_history_col = db[CHAT_HISTORY_COLLECTION]  # Phase 3A RAG
 
         # Ensure unique email index on users collection
         users_col.create_index([("email", ASCENDING)], unique=True)
+        # Index feedbacks by userId for fast per-user queries
+        feedbacks_col.create_index([("userId", ASCENDING)])
+        # Index chat_history by userId + timestamp (Phase 3A RAG)
+        chat_history_col.create_index([("userId", ASCENDING), ("timestamp", -1)])
 
         is_connected = True
         logger.info("Successfully connected to MongoDB Atlas!")
@@ -59,7 +70,7 @@ def init_db():
     except (ConnectionFailure, ServerSelectionTimeoutError) as e:
         logger.error(f"Failed to connect to MongoDB Atlas: {e}")
         is_connected = False
-        db_client = db = scans_col = users_col = None
+        db_client = db = scans_col = users_col = feedbacks_col = chat_history_col = None
         return False
     except Exception as e:
         logger.error(f"Unexpected database initialization error: {e}")
@@ -82,6 +93,88 @@ def check_connection():
     except Exception:
         is_connected = False
         return False
+
+
+# ===========================================================================
+# FEEDBACKS COLLECTION  (Phase 2B)
+# ===========================================================================
+
+def save_feedback(user_id: str, name: str, email: str, rating: int, message: str) -> str | None:
+    """
+    Save a user feedback document to the feedbacks collection.
+    Returns the inserted _id string, or None on failure.
+    """
+    if not check_connection():
+        logger.warning("Database offline. Cannot save feedback.")
+        return None
+    try:
+        doc = {
+            "name":      name,
+            "email":     email,
+            "rating":    int(rating),
+            "message":   message,
+            "createdAt": datetime.datetime.utcnow(),
+        }
+        if user_id and ObjectId.is_valid(user_id):
+            doc["userId"] = ObjectId(user_id)
+        result = feedbacks_col.insert_one(doc)
+        logger.info(f"Feedback saved | ID: {result.inserted_id} | user: {user_id} | rating: {rating}")
+        return str(result.inserted_id)
+    except Exception as e:
+        logger.error(f"Failed to save feedback: {e}")
+        return None
+
+
+def get_my_feedbacks(user_id: str) -> list:
+    """
+    Fetch all feedback submitted by a specific user, newest first.
+    Returns a list of feedback dicts.
+    """
+    if not check_connection() or not ObjectId.is_valid(user_id):
+        return []
+    try:
+        cursor = feedbacks_col.find(
+            {"userId": ObjectId(user_id)}
+        ).sort("createdAt", -1).limit(50)
+        results = []
+        for doc in cursor:
+            results.append({
+                "id":        str(doc["_id"]),
+                "name":      doc.get("name", "Anonymous"),
+                "email":     doc.get("email", ""),
+                "rating":    doc.get("rating", 0),
+                "message":   doc.get("message", ""),
+                "createdAt": doc["createdAt"].isoformat() + "Z",
+            })
+        return results
+    except Exception as e:
+        logger.error(f"Failed to fetch user feedbacks: {e}")
+        return []
+
+
+def get_feedback_stats() -> dict:
+    """
+    Compute global aggregate feedback statistics.
+    Returns: { total, avg_rating, distribution: {1..5: count} }
+    """
+    empty = {"total": 0, "avg_rating": None, "distribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}}
+    if not check_connection():
+        return empty
+    try:
+        docs = list(feedbacks_col.find({}, {"rating": 1}))
+        if not docs:
+            return empty
+        total = len(docs)
+        ratings = [d.get("rating", 0) for d in docs]
+        avg = round(sum(ratings) / total, 1)
+        dist = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        for r in ratings:
+            if r in dist:
+                dist[r] += 1
+        return {"total": total, "avg_rating": avg, "distribution": dist}
+    except Exception as e:
+        logger.error(f"Failed to compute feedback stats: {e}")
+        return empty
 
 
 # ===========================================================================
@@ -313,15 +406,20 @@ def clear_all(user_id=None):
 def get_dashboard_stats(user_id: str) -> dict:
     """
     Compute personalised dashboard statistics for a user.
-    Returns:
+    Returns (Phase 2C extended):
         totalScans, healthyPlants, diseasedPlants, lastScan, topDisease,
-        riskBreakdown, recentActivity
+        riskBreakdown, recentActivity, avgConfidence, highestRiskScan,
+        monthlyProgress, scanActivityTrend
     """
     empty = {
         "totalScans": 0, "healthyPlants": 0, "diseasedPlants": 0,
         "lastScan": None, "topDisease": None,
         "riskBreakdown": {"HIGH": 0, "MEDIUM": 0, "LOW": 0},
         "recentActivity": [],
+        "avgConfidence": None,
+        "highestRiskScan": None,
+        "monthlyProgress": [],
+        "scanActivityTrend": [],
     }
 
     if not check_connection() or not ObjectId.is_valid(user_id):
@@ -332,12 +430,12 @@ def get_dashboard_stats(user_id: str) -> dict:
         all_scans = list(
             scans_col.find({"userId": oid})
                      .sort("timestamp", -1)
-                     .limit(500)
+                     .limit(1000)
         )
 
-        total     = len(all_scans)
-        healthy   = sum(1 for s in all_scans if s.get("isHealthy", False))
-        diseased  = total - healthy
+        total    = len(all_scans)
+        healthy  = sum(1 for s in all_scans if s.get("isHealthy", False))
+        diseased = total - healthy
 
         # Last scan
         last_scan = None
@@ -360,10 +458,26 @@ def get_dashboard_stats(user_id: str) -> dict:
 
         # Risk breakdown
         risk_breakdown = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        highest_risk_scan = None
+        highest_risk_score = -1
         for s in all_scans:
             rl = s.get("riskLevel", "LOW")
             if rl in risk_breakdown:
                 risk_breakdown[rl] += 1
+            # Track highest risk scan (by score)
+            rs = s.get("riskScore") or 0
+            if rs > highest_risk_score:
+                highest_risk_score = rs
+                highest_risk_scan = {
+                    "disease":   s.get("disease", "Unknown"),
+                    "riskLevel": rl,
+                    "riskScore": rs,
+                    "date":      s["timestamp"].isoformat() + "Z",
+                }
+
+        # Average confidence (Phase 2C)
+        conf_values = [s.get("confidence", 0) for s in all_scans if s.get("confidence") is not None]
+        avg_confidence = round(sum(conf_values) / len(conf_values), 1) if conf_values else None
 
         # Recent activity (last 10)
         recent = []
@@ -374,19 +488,144 @@ def get_dashboard_stats(user_id: str) -> dict:
                 "isHealthy": s.get("isHealthy", False),
                 "severity":  s.get("severity", "LOW"),
                 "riskLevel": s.get("riskLevel", "LOW"),
+                "confidence":s.get("confidence"),
                 "date":      s["timestamp"].isoformat() + "Z",
             })
 
+        # Monthly progress — last 6 calendar months (Phase 2C)
+        now = datetime.datetime.utcnow()
+        monthly_progress = []
+        for i in range(5, -1, -1):  # 5 months ago → current
+            month_dt = (now.replace(day=1) - datetime.timedelta(days=1)).replace(day=1)
+            # Calculate target month
+            target_month = now.month - i
+            target_year  = now.year
+            while target_month <= 0:
+                target_month += 12
+                target_year  -= 1
+            month_label = datetime.date(target_year, target_month, 1).strftime("%b %Y")
+            m_scans = [
+                s for s in all_scans
+                if s["timestamp"].month == target_month and s["timestamp"].year == target_year
+            ]
+            monthly_progress.append({
+                "month":    month_label,
+                "scans":    len(m_scans),
+                "healthy":  sum(1 for s in m_scans if s.get("isHealthy", False)),
+                "diseased": sum(1 for s in m_scans if not s.get("isHealthy", False)),
+            })
+
+        # 30-Day scan activity trend (Phase 2C)
+        scan_activity_trend = []
+        for i in range(29, -1, -1):
+            day_dt    = now - datetime.timedelta(days=i)
+            day_label = day_dt.strftime("%d %b")
+            count     = sum(
+                1 for s in all_scans
+                if s["timestamp"].date() == day_dt.date()
+            )
+            scan_activity_trend.append({"date": day_label, "count": count})
+
         return {
-            "totalScans":     total,
-            "healthyPlants":  healthy,
-            "diseasedPlants": diseased,
-            "lastScan":       last_scan,
-            "topDisease":     top_disease,
-            "riskBreakdown":  risk_breakdown,
-            "recentActivity": recent,
+            "totalScans":        total,
+            "healthyPlants":     healthy,
+            "diseasedPlants":    diseased,
+            "lastScan":          last_scan,
+            "topDisease":        top_disease,
+            "riskBreakdown":     risk_breakdown,
+            "recentActivity":    recent,
+            "avgConfidence":     avg_confidence,
+            "highestRiskScan":   highest_risk_scan,
+            "monthlyProgress":   monthly_progress,
+            "scanActivityTrend": scan_activity_trend,
         }
 
     except Exception as e:
         logger.error(f"Failed to compute dashboard stats: {e}")
         return empty
+
+
+# ===========================================================================
+# CHAT HISTORY COLLECTION  (Phase 3A — RAG Agriculture Expert)
+# ===========================================================================
+
+def save_chat_message(
+    user_id: str | None,
+    question: str,
+    answer: str,
+    sources: list,
+    mode: str,
+) -> str | None:
+    """
+    Persist a RAG chat exchange to the chat_history collection.
+
+    Args:
+        user_id : ObjectId string of the authenticated user (None for guests)
+        question: User's question text
+        answer  : RAG or fallback answer text
+        sources : List of source dicts [{document, page, category}]
+        mode    : "rag" | "fallback"
+
+    Returns:
+        Inserted document _id string, or None on failure.
+    """
+    if not check_connection():
+        logger.warning("[chat_history] Database offline. Cannot save chat message.")
+        return None
+    try:
+        doc = {
+            "question":  question,
+            "answer":    answer,
+            "sources":   sources or [],
+            "mode":      mode,
+            "timestamp": datetime.datetime.utcnow(),
+        }
+        if user_id and ObjectId.is_valid(user_id):
+            doc["userId"] = ObjectId(user_id)
+
+        result = chat_history_col.insert_one(doc)
+        logger.info(f"[chat_history] Saved | id={result.inserted_id} | mode={mode} | user={user_id}")
+        return str(result.inserted_id)
+    except Exception as e:
+        logger.error(f"[chat_history] Failed to save message: {e}")
+        return None
+
+
+def get_chat_history(user_id: str | None, limit: int = 10) -> list:
+    """
+    Fetch the last `limit` RAG chat messages for a user, newest first.
+
+    Args:
+        user_id: ObjectId string of the authenticated user (None returns [])
+        limit  : Maximum number of messages to return (default 10)
+
+    Returns:
+        List of chat message dicts, or [] if offline / no history.
+    """
+    if not check_connection():
+        return []
+    try:
+        query = (
+            {"userId": ObjectId(user_id)}
+            if user_id and ObjectId.is_valid(user_id)
+            else {"userId": {"$exists": False}}
+        )
+        cursor = (
+            chat_history_col.find(query)
+            .sort("timestamp", -1)
+            .limit(limit)
+        )
+        results = []
+        for doc in cursor:
+            results.append({
+                "id":        str(doc["_id"]),
+                "question":  doc.get("question", ""),
+                "answer":    doc.get("answer", ""),
+                "sources":   doc.get("sources", []),
+                "mode":      doc.get("mode", "rag"),
+                "timestamp": doc["timestamp"].isoformat() + "Z",
+            })
+        return results
+    except Exception as e:
+        logger.error(f"[chat_history] Failed to fetch history: {e}")
+        return []

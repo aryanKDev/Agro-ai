@@ -1,155 +1,253 @@
-<div align="center">
+# AgroAI 🌾
 
-# 🌿 AgroAI — Intelligent Plant Disease Detection Platform
+> **AI-Powered Agricultural Intelligence Platform**
 
-**Phase 1 Complete · Multi-User SaaS · AI-Powered · Real-Time Intelligence**
+[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen)](https://github.com)
+[![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
+[![Flask](https://img.shields.io/badge/flask-3.x-black)](https://flask.palletsprojects.com)
+[![TensorFlow](https://img.shields.io/badge/tensorflow-2.x-orange)](https://tensorflow.org)
+[![MongoDB](https://img.shields.io/badge/mongodb-atlas-green)](https://cloud.mongodb.com)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
-[![Flask](https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://mongodb.com/atlas)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.x-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-
-> AgroAI is a production-grade agricultural intelligence SaaS platform that combines **TensorFlow deep learning**, **Google Gemini AI**, **real-time weather data**, and a **predictive disease risk engine** to help farmers detect plant diseases, understand risk, and take action — all from their browser.
-
-</div>
+AgroAI is a production-grade, full-stack agricultural intelligence platform designed to empower farmers, agronomists, and researchers with real-time disease detection, weather-informed risk analysis, and an AI-powered expert assistant grounded in verified agricultural knowledge.
 
 ---
 
 ## ✨ Features
 
-| Feature | Description |
-|---|---|
-| 🔬 **AI Disease Detection** | TensorFlow CNN model trained on 87,000+ plant images across 38 disease classes |
-| 🔐 **JWT Authentication** | Secure register/login/logout with bcrypt password hashing |
-| 👤 **Multi-User SaaS** | Full data isolation — each user sees only their own scans, history, and analytics |
-| ☁️ **MongoDB Atlas** | Cloud-persisted scan history with user-scoped queries |
-| 🌦️ **Weather Intelligence** | Real-time weather via OpenWeatherMap API with 30-min cache and simulated fallback |
-| 📍 **Geolocation Weather** | Auto-detects user's GPS location via `navigator.geolocation` |
-| 🦠 **Disease Risk Engine** | Fuzzy-logic risk scoring (HIGH/MEDIUM/LOW) based on disease type + weather conditions |
-| 📊 **Analytics Dashboard** | Personalised KPIs, risk distribution charts, and activity timeline per user |
-| 💬 **Gemini AI Chatbot** | Context-aware plant disease assistant powered by Google Gemini 1.5 Flash |
-| 📄 **PDF Reports** | Premium AI-generated scan reports via ReportLab |
-| 🌍 **Farming Insights** | 9 threshold-based agronomic advisory rules from weather data |
+| Category | Feature | Status |
+|---|---|---|
+| **AI Detection** | Plant Disease Detection (38 classes) | ✅ |
+| **AI Detection** | Disease Severity Analysis (LOW / MEDIUM / HIGH) | ✅ |
+| **Authentication** | JWT Authentication & Session Management | ✅ |
+| **SaaS** | Multi-User SaaS Architecture | ✅ |
+| **Dashboard** | Personalised User Dashboard | ✅ |
+| **Analytics** | Analytics Dashboard (KPIs, Charts, Trends) | ✅ |
+| **Weather** | Weather Intelligence (OpenWeatherMap) | ✅ |
+| **Weather** | Geolocation Weather (GPS Coordinates) | ✅ |
+| **Insights** | Smart Farming Insights from Weather | ✅ |
+| **Risk** | Disease Spread Risk Prediction Engine | ✅ |
+| **Language** | Multi-Language Support (English / हिंदी) | ✅ |
+| **Feedback** | MongoDB-backed Feedback System | ✅ |
+| **RAG** | RAG Agriculture Expert Assistant | ✅ |
+| **RAG** | FAISS Vector Search (Semantic Retrieval) | ✅ |
+| **RAG** | Agriculture Knowledge Base (7 domains) | ✅ |
+| **RAG** | Source Citations from Knowledge Base | ✅ |
+| **Reports** | Premium PDF Report Generation | ✅ |
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     AgroAI Platform                         │
-├───────────────┬─────────────────────┬───────────────────────┤
-│   Frontend    │      Backend        │     Intelligence       │
-│               │                    │                        │
-│  HTML5/CSS3   │   Flask 3.x        │  TensorFlow CNN        │
-│  Vanilla JS   │   Flask-JWT-Extended│  Gemini 1.5 Flash      │
-│  Chart.js     │   PyMongo          │  Risk Engine (Fuzzy)   │
-│  Glassmorphism│   Flask-Bcrypt     │  Weather Service (OWM) │
-│               │   ReportLab        │  Farming Insights      │
-└───────────────┴─────────────────────┴───────────────────────┘
-                           │
-                    MongoDB Atlas
-                  (User-Scoped Data)
-```
-
-### Data Flow — Authenticated Scan
+### Plant Disease Detection Pipeline
 
 ```
-Browser (logged in)
-  → POST /predict  +  Authorization: Bearer <JWT>
-  → get_optional_user_id()  →  ObjectId("user123")
-  → TensorFlow prediction  →  disease_name, confidence
-  → get_weather("Bhopal")  →  humidity, temperature
-  → risk_engine.analyse_risk()  →  HIGH/MEDIUM/LOW
-  → MongoDB: { disease, confidence, userId, riskLevel, weatherSnapshot }
-  → Response: { disease_name, riskLevel, riskScore, riskReason }
-  → Frontend: History page updates immediately ✅
+Plant Image (Upload / URL)
+        ↓
+TensorFlow Model (128×128 CNN)
+        ↓
+Disease Detection  →  38 Plant Disease Classes
+        ↓
+Weather Analysis  →  OpenWeatherMap API
+        ↓
+Risk Prediction   →  Rule-Based Risk Engine
+        ↓
+MongoDB Storage   →  Atlas Cloud Database
+        ↓
+Dashboard Analytics  →  User KPIs & Trends
+```
+
+### RAG Agriculture Expert Pipeline
+
+```
+User Question
+      ↓
+FAISS Vector Search  →  all-MiniLM-L6-v2 Embeddings
+      ↓
+Knowledge Base  →  ICAR / Agriculture Domain Docs
+      ↓
+Grounded Prompt  →  Retrieved Context (Top-5 Chunks)
+      ↓
+Gemini 1.5 Flash
+      ↓
+Grounded Answer + Source Citations
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🛠️ Tech Stack
+
+### Frontend
+| Technology | Purpose |
+|---|---|
+| HTML5 | Structure & Semantic Markup |
+| CSS3 (Vanilla) | Styling, Animations, Glassmorphism |
+| JavaScript (ES6+) | Dynamic UI, Fetch API, i18n Engine |
+
+### Backend
+| Technology | Purpose |
+|---|---|
+| Flask 3.x | Web Framework & REST API |
+| MongoDB Atlas | Cloud Database (Scans, Users, Feedback, Chat History) |
+| Flask-JWT-Extended | Multi-User Authentication & Authorization |
+| TensorFlow 2.x + Keras | Plant Disease Classification Model |
+| Google Gemini 1.5 Flash | AI Chatbot & RAG Answer Generation |
+| Gunicorn | Production WSGI Server |
+| ReportLab | PDF Report Generation |
+
+### AI / ML
+| Technology | Purpose |
+|---|---|
+| FAISS | High-Performance Vector Similarity Search |
+| Sentence Transformers | Semantic Embedding (`all-MiniLM-L6-v2`) |
+| LangChain | RAG Pipeline Orchestration |
+| PyPDF | PDF Document Ingestion for Knowledge Base |
+
+---
+
+## 🚀 Installation
 
 ### Prerequisites
+- Python 3.11+
+- MongoDB Atlas account (free tier works)
+- Google Gemini API key — [get it here](https://aistudio.google.com/app/apikey)
+- OpenWeatherMap API key — [get it here](https://openweathermap.org/api)
 
-- Python 3.10+
-- MongoDB Atlas cluster (free tier works)
-- Google Gemini API key ([get one](https://aistudio.google.com/app/apikey))
-- OpenWeatherMap API key ([get one](https://openweathermap.org/api)) *(optional — has simulation fallback)*
-
-### Installation
+### 1. Clone the Repository
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/PDDS.git
-cd PDDS/plant-disease-detection-system
+git clone https://github.com/<your-username>/agroai.git
+cd agroai
+```
 
-# 2. Create and activate virtual environment
+### 2. Create a Virtual Environment & Install Dependencies
+
+```bash
+# Create virtual environment
 python -m venv venv
-venv\Scripts\activate          # Windows
-# source venv/bin/activate     # macOS/Linux
 
-# 3. Install dependencies
+# Activate (Windows)
+venv\Scripts\activate
+
+# Activate (Linux / macOS)
+source venv/bin/activate
+
+# Install all dependencies
 pip install -r requirements.txt
+```
 
-# 4. Configure environment variables
+### 3. Configure Environment Variables
+
+```bash
+# Copy the template
 cp .env.example .env
-# Edit .env with your actual keys (see Environment Variables section)
+```
 
-# 5. Run the application
+Edit `.env` with your real credentials (see [Environment Variables](#-environment-variables)).
+
+### 4. Build the Agriculture Knowledge Base Index
+
+```bash
+python ingest.py
+```
+
+This will:
+- Read all documents from `knowledge_base/` (7 domain categories)
+- Chunk and embed them using `all-MiniLM-L6-v2`
+- Build and save the FAISS vector index to `vectorstore/`
+
+> ⏱️ First run takes ~2–3 minutes to download the embedding model.
+
+### 5. Start the Application
+
+```bash
 python app.py
 ```
 
-Open **http://127.0.0.1:5000** in your browser.
+The server will start at **http://127.0.0.1:5000**
+
+> For production, use Gunicorn: `gunicorn -w 2 -b 0.0.0.0:5000 app:app`
 
 ---
 
-## 🔐 Environment Variables
+## 🔑 Environment Variables
 
-Create a `.env` file in the project root (never commit this file):
+Create a `.env` file in the project root with the following keys:
 
 ```env
-# Google Gemini AI
-GOOGLE_API_KEY=your_gemini_api_key_here
+# ── Google Gemini AI ─────────────────────────────────────────
+# Powers the chatbot and RAG expert assistant
+# Get your key: https://aistudio.google.com/app/apikey
+GOOGLE_API_KEY=your_google_gemini_api_key_here
 
-# MongoDB Atlas
-MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/agroai?retryWrites=true&w=majority
+# ── MongoDB Atlas ─────────────────────────────────────────────
+# Cloud database for users, scans, feedback, and chat history
+MONGO_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/agroai?retryWrites=true&w=majority
 
-# JWT Authentication
-JWT_SECRET_KEY=your_strong_random_secret_here_min_32_chars
+# ── JWT Authentication ────────────────────────────────────────
+# Strong secret key — minimum 32 characters, change in production
+JWT_SECRET_KEY=change_this_to_a_strong_random_secret_min_32_chars
 JWT_ACCESS_TOKEN_EXPIRES=86400
 
-# OpenWeatherMap (optional — falls back to simulation if missing)
+# ── OpenWeatherMap (optional) ─────────────────────────────────
+# Real-time weather data. Falls back to simulated data if not set.
+# Get your key: https://openweathermap.org/api
 OPENWEATHER_API_KEY=your_openweathermap_api_key_here
 ```
 
-> ⚠️ **Security**: The `.env` file is listed in `.gitignore` and will never be committed. All secrets must live here only.
+> ⚠️ **Never commit your `.env` file.** It is already git-ignored. Only commit `.env.example`.
 
 ---
 
 ## 📁 Project Structure
 
 ```
-plant-disease-detection-system/
-├── app.py                    # Flask application & all API routes
-├── database.py               # MongoDB Atlas CRUD operations (user-scoped)
-├── risk_engine.py            # Fuzzy-logic disease spread risk scoring
-├── pdf_generator.py          # ReportLab PDF report generation
-├── disease_rules.json        # 38-class disease→risk threshold mapping
-├── auth/
-│   └── routes.py             # JWT auth blueprints (register/login/logout/profile)
-├── services/
-│   ├── weather_service.py    # OpenWeatherMap + GPS coord lookup + fallback
-│   └── farming_insights.py  # Agronomic threshold-based advisory rules
-├── index.html                # Single-page application shell
-├── script.js                 # Frontend modules (Router, Storage, Analytics, Weather, RiskCard)
-├── auth.js                   # JWT auth state manager (window.Auth)
-├── style.css                 # Glassmorphic CSS design system
-├── requirements.txt          # Python dependencies
-├── .env.example              # Environment variable template
-├── .gitignore                # Excludes .env, __pycache__, venv, etc.
-└── trained_plant_disease_model.keras  # TensorFlow CNN (38 classes)
+agroai/
+├── app.py                          # Main Flask application & all API routes
+├── database.py                     # MongoDB operations (scans, users, feedback, chat)
+├── risk_engine.py                  # Disease spread risk calculation engine
+├── pdf_generator.py                # Premium PDF report generation (ReportLab)
+├── ingest.py                       # RAG knowledge base ingestion & FAISS indexing
+├── requirements.txt                # Python dependencies
+├── runtime.txt                     # Python runtime version (for deployment)
+├── .env.example                    # Environment variables template
+├── .gitignore                      # Git ignore rules (includes .env)
+│
+├── auth/                           # JWT Authentication module
+│   ├── auth_routes.py              #   /api/auth/register, /login, /me, /profile
+│   └── auth_utils.py              #   Password hashing, JWT helpers
+│
+├── services/                       # Business logic services
+│   ├── weather_service.py          #   OpenWeatherMap API integration
+│   ├── farming_insights.py         #   AI-generated farming tips from weather
+│   └── rag_service.py              #   FAISS + Gemini RAG pipeline (Phase 3A)
+│
+├── knowledge_base/                 # Agriculture domain documents (7 categories)
+│   ├── crops/                      #   Crop cultivation guides
+│   ├── diseases/                   #   Plant disease reference docs
+│   ├── fertilizers/                #   Fertilizer usage & schedules
+│   ├── government/                 #   Government schemes & subsidies
+│   ├── irrigation/                 #   Irrigation methods & water management
+│   ├── pesticides/                 #   Pesticide safety & application
+│   └── weather/                    #   Weather-based farming advice
+│
+├── vectorstore/                    # Auto-generated FAISS index (run ingest.py)
+│   ├── index.faiss                 #   FAISS binary index
+│   └── index.pkl                   #   LangChain metadata & docstore
+│
+├── translations/                   # Multi-language support (Phase 2A)
+│   ├── en.json                     #   English UI strings
+│   └── hi.json                     #   Hindi (हिंदी) UI strings
+│
+├── index.html                      # Single-page frontend (SPA)
+├── script.js                       # Frontend JS (auth, scans, RAG, i18n, dashboard)
+├── style.css                       # Styling (glassmorphism, animations, dark UI)
+├── auth.js                         # Frontend authentication module
+│
+├── disease_info.json               # Local disease knowledge base (38 diseases)
+├── disease_rules.json              # Risk engine rules
+├── trained_plant_disease_model.keras  # TensorFlow CNN model
+└── settings.json                   # App settings
 ```
 
 ---
@@ -157,110 +255,150 @@ plant-disease-detection-system/
 ## 🔌 API Reference
 
 ### Authentication
-
-| Method | Endpoint | Auth | Description |
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | None | Create new account |
-| `POST` | `/api/auth/login` | None | Login, returns JWT |
-| `POST` | `/api/auth/logout` | JWT | Invalidate session |
-| `GET` | `/api/auth/profile` | JWT | Get user profile |
-| `PUT` | `/api/auth/profile` | JWT | Update profile |
+| `POST` | `/api/auth/register` | Register new user | Public |
+| `POST` | `/api/auth/login` | Login & get JWT | Public |
+| `GET` | `/api/auth/me` | Get current user profile | JWT |
 
-### Core AI
-
-| Method | Endpoint | Auth | Description |
+### Disease Detection
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `POST` | `/predict` | Optional | Run disease detection + risk analysis |
-| `POST` | `/chat` | None | Gemini AI chatbot |
-| `POST` | `/generate-report` | None | Generate PDF report |
+| `POST` | `/predict` | Analyze plant image for disease | Optional JWT |
+| `GET` | `/api/scans` | Get scan history | Optional JWT |
+| `DELETE` | `/api/scans/<id>` | Delete a scan | Optional JWT |
+| `DELETE` | `/api/scans` | Clear all scans | Optional JWT |
 
-### Data & Intelligence
-
-| Method | Endpoint | Auth | Description |
+### Dashboard & Analytics
+| Method | Endpoint | Description | Auth |
 |---|---|---|---|
-| `GET` | `/api/scans` | Optional | Get scan history (user-scoped if JWT present) |
-| `DELETE` | `/api/scans/<id>` | Optional | Delete a scan |
-| `GET` | `/api/dashboard` | **Required** | Personalised KPIs and analytics |
-| `GET` | `/api/weather?city=X` | None | Weather by city name |
-| `GET` | `/api/weather?lat=X&lon=Y` | None | Weather by GPS coordinates |
-| `POST` | `/api/risk-analysis` | None | Standalone risk analysis |
+| `GET` | `/api/dashboard` | Personalized KPIs & trends | JWT Required |
 
----
+### Weather & Risk
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/weather?city=<city>` | Get weather by city name | Public |
+| `GET` | `/api/weather?lat=<lat>&lon=<lon>` | Get weather by GPS coordinates | Public |
+| `POST` | `/api/risk-analysis` | Disease spread risk analysis | Public |
 
-## 🧪 Testing
+### Feedback
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/feedback` | Submit feedback (rating + message) | JWT Required |
+| `GET` | `/api/feedback/my` | Get my feedback submissions | JWT Required |
+| `GET` | `/api/feedback/stats` | Aggregate feedback statistics | Public |
 
-Run the automated regression suite (requires server running):
+### RAG Expert Assistant
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/rag-chat` | Ask agriculture expert question | Optional JWT |
+| `GET` | `/api/rag-chat/history` | Get RAG chat history | Optional JWT |
+| `POST` | `/api/admin/rebuild-index` | Hot-rebuild FAISS index | JWT Required |
 
-```bash
-# Start server in one terminal
-python app.py
-
-# Run regression tests in another
-python verify_bugfix.py     # 29 API tests
-python prove_scan_fix.py    # Scan persistence proof
-```
-
----
-
-## 🌿 Supported Diseases (38 Classes)
-
-The model detects diseases across **14 plant species**:
-
-| Plant | Diseases Detected |
-|---|---|
-| Tomato | Early Blight, Late Blight, Leaf Mold, Septoria, Spider Mites, Target Spot, Mosaic Virus, Yellow Leaf Curl, Bacterial Spot, Healthy |
-| Potato | Early Blight, Late Blight, Healthy |
-| Corn/Maize | Cercospora, Common Rust, Northern Blight, Healthy |
-| Apple | Black Rot, Cedar Rust, Scab, Healthy |
-| Grape | Black Rot, Esca, Isariopsis Leaf Spot, Healthy |
-| + 9 more | Peach, Cherry, Pepper, Strawberry, Soybean, Squash, Blueberry, Raspberry, Orange |
-
----
-
-## 🔒 Security Features
-
-- **Password hashing**: `bcrypt` with salt rounds
-- **JWT tokens**: HS256 signed, 24-hour expiry
-- **Data isolation**: All MongoDB queries scoped by `userId` (ObjectId)
-- **Optional auth on `/predict`**: JWT injected automatically when logged in
-- **No secrets in source**: All credentials in `.env` (git-ignored)
-- **CORS**: Configured for local dev; restrict origins in production
+### Reports & Chat
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/generate-report` | Generate premium PDF report | Optional JWT |
+| `POST` | `/chat` | Disease-context Gemini chatbot | Public |
 
 ---
 
 ## 📸 Screenshots
 
-> *Glassmorphic dark UI with real-time intelligence*
+> Screenshots will be added after the live deployment.
 
-| Feature | Screenshot |
+| View | Preview |
 |---|---|
-| Disease Detection | Upload → AI Analysis → Risk Card |
-| Weather Dashboard | Live weather + Smart Farming Insights |
-| Analytics Page | KPI cards + Risk distribution chart |
-| Scan History | Per-user MongoDB-backed history with risk badges |
+| 🏠 **Home / Landing** | *(screenshot placeholder)* |
+| 🔬 **Disease Detection** | *(screenshot placeholder)* |
+| ⛅ **Weather Dashboard** | *(screenshot placeholder)* |
+| 📊 **Analytics Dashboard** | *(screenshot placeholder)* |
+| 💬 **Feedback Panel** | *(screenshot placeholder)* |
+| 🤖 **RAG Expert Assistant** | *(screenshot placeholder)* |
 
 ---
 
-## 🗺️ Roadmap
+## 🔒 Security
 
-- [x] **Phase 1A** — JWT Auth + Multi-User SaaS
-- [x] **Phase 1B** — User Dashboard & Analytics
-- [x] **Phase 1C** — Real-Time Weather Integration
-- [x] **Phase 1D** — Farming Insights Engine
-- [x] **Phase 1E** — Disease Risk Prediction Engine
-- [ ] **Phase 2** — Subscription tiers + Stripe billing
-- [ ] **Phase 2** — Mobile PWA with offline detection
-- [ ] **Phase 3** — Multi-farm management + team accounts
-- [ ] **Phase 3** — Historical weather trend analysis
+- **`.env` is git-ignored** — credentials never enter version control
+- **`.env.example` only** contains placeholder values and is safe to commit
+- **JWT tokens** expire after 24 hours (configurable via `JWT_ACCESS_TOKEN_EXPIRES`)
+- **Password hashing** via `bcrypt` — plain-text passwords never stored
+- **User isolation** — MongoDB queries are scoped to authenticated `user_id`
+- **Input validation** on all feedback, auth, and RAG endpoints
+
+---
+
+## 🌐 Multi-Language Support
+
+AgroAI supports **English** and **Hindi (हिंदी)** throughout the entire interface:
+
+- UI strings loaded dynamically from `translations/en.json` and `translations/hi.json`
+- Chatbot and RAG assistant respond in the selected language
+- Language toggle persists across sessions
+
+---
+
+## 📊 Analytics Dashboard
+
+The personalized dashboard provides:
+
+- **Total Scans** — cumulative disease detection count
+- **Healthy vs. Diseased** — split with percentage
+- **Average Confidence** — model accuracy across all scans
+- **Highest Risk Scan** — most critical detection on record
+- **30-Day Activity Chart** — monthly scan frequency trend
+- **Disease Distribution** — top detected diseases breakdown
+
+---
+
+## 🤖 RAG Knowledge Base
+
+The agriculture knowledge base spans **7 expert domains**:
+
+| Domain | Coverage |
+|---|---|
+| 🌾 Crops | Cultivation guides, sowing seasons, varieties |
+| 🦠 Diseases | Disease profiles, pathogens, symptoms |
+| 🧪 Fertilizers | NPK recommendations, application timing |
+| 🏛️ Government Schemes | PM-KISAN, crop insurance, subsidies |
+| 💧 Irrigation | Drip, sprinkler, flood irrigation best practices |
+| 🐛 Pesticides | Safe usage, dosages, integrated pest management |
+| ⛅ Weather | Seasonal farming advice, climate adaptation |
+
+Documents are chunked, embedded with `all-MiniLM-L6-v2`, and stored in FAISS for sub-second semantic retrieval.
+
+---
+
+## 🚢 Release History
+
+### v2.0.0 — RAG Agriculture Expert Release *(Current)*
+- ✅ Phase 3A: RAG Agriculture Expert Assistant
+- ✅ FAISS Vector Search with semantic retrieval
+- ✅ 7-domain Agriculture Knowledge Base
+- ✅ Chat History persisted to MongoDB
+- ✅ Source Citations from knowledge documents
+- ✅ Admin hot-rebuild FAISS index endpoint
+- ✅ Phase 2A: Multi-Language Support (EN / हिंदी)
+- ✅ Phase 2B: MongoDB Feedback System
+- ✅ Phase 2C: Enhanced Analytics Dashboard
+
+### v1.0.0 — Multi-User SaaS Platform
+- ✅ JWT Authentication & Multi-User SaaS
+- ✅ Weather Intelligence & Geolocation Weather
+- ✅ Disease Spread Risk Prediction Engine
+- ✅ Analytics Dashboard & Personalized Dashboard
+- ✅ Premium PDF Report Generation
+- ✅ MongoDB Atlas Integration
 
 ---
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/phase-2-billing`)
-3. Commit your changes (`git commit -m 'Add Stripe billing integration'`)
-4. Push to the branch (`git push origin feature/phase-2-billing`)
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "feat: add your feature"`
+4. Push to the branch: `git push origin feature/your-feature`
 5. Open a Pull Request
 
 ---
@@ -273,6 +411,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 <div align="center">
 
-Built with 🌿 by the AgroAI Team · Powered by TensorFlow, Flask, MongoDB Atlas & Google Gemini
+**Built with ❤️ for Indian farmers**
+
+[Report Bug](https://github.com) · [Request Feature](https://github.com) · [Documentation](https://github.com)
 
 </div>

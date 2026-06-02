@@ -1,0 +1,145 @@
+TOMATO CROP MANAGEMENT GUIDE — INDIA
+======================================
+Source: ICAR-Indian Institute of Horticultural Research (IIHR), Bangalore
+Category: Crop Management | Crop: Tomato (Solanum lycopersicum)
+
+---
+
+SECTION 1: VARIETIES AND SEED SELECTION
+
+1.1 RECOMMENDED OPEN-POLLINATED VARIETIES
+- Pusa Ruby: Early maturing (70–75 days), round fruits, suitable for North India
+- Arka Meghali: Heavy yielder (40–50 t/ha), tolerant to leaf curl virus
+- Arka Vikas: Mid-season variety, suitable for Kharif and Rabi seasons
+- CO-3: Popular in Tamil Nadu and Andhra Pradesh, heat-tolerant
+- Punjab Chhuhara: Long shelf life, suitable for distant markets
+
+1.2 RECOMMENDED HYBRID VARIETIES
+- Arka Rakshak (ICAR): Triple disease resistant (ToLCV, ToANV, TSWV), yield 75–80 t/ha
+- Arka Samrat: High lycopene content, fruit weight 90–100 g, yield 70–75 t/ha
+- Syngenta Abhilash: ToLCV tolerant, determinate type, suitable for mechanical harvesting
+- US-440: Indeterminate type, heavy yielder under protected cultivation
+
+1.3 SEED RATE
+- Open-pollinated varieties: 400–500 g/ha
+- Hybrid varieties: 200–250 g/ha
+- Seed treatment: Thiram 75% WP at 3 g/kg seed (fungicide) + Imidacloprid 70% WS at 10 g/kg (insecticide)
+
+---
+
+SECTION 2: NURSERY PREPARATION AND TRANSPLANTING
+
+2.1 NURSERY BED PREPARATION
+- Prepare raised nursery beds: 1 m wide × 3 m long × 15 cm height
+- Mix soil + FYM + sand in 2:1:1 ratio; solarize bed for 2 weeks before seeding
+- Sterilize with Formaldehyde 2% @ 5 L/m² — cover with polythene for 3 days
+- Sow seeds in rows 5 cm apart at 1 cm depth
+- Cover with thin layer of FYM + vermiculite
+
+2.2 NURSERY CARE
+- Maintain soil moisture — avoid waterlogging (causes damping-off disease)
+- Apply Bavistin (Carbendazim 50% WP) at 2 g/L at 7-day intervals for damping-off control
+- Apply Imidacloprid 0.5 mL/L after 10 days for whitefly/aphid control
+- Harden seedlings 7–10 days before transplanting by reducing irrigation and shade
+
+2.3 TRANSPLANTING
+- Transplant at 4–5 leaf stage (25–30 days after sowing in summer; 30–35 days in winter)
+- Transplanting time:
+  - Kharif (Rainy season): June–July
+  - Rabi (Winter): September–October in hills; October–November in plains
+  - Summer crop: January–February
+- Spacing: 60 cm × 45 cm (indeterminate types); 45 cm × 30 cm (determinate types)
+- Water immediately after transplanting; provide temporary shade for 3–5 days
+- Gap filling within 7 days to maintain uniform plant population
+
+---
+
+SECTION 3: FIELD PREPARATION AND PLANTING
+
+3.1 LAND PREPARATION
+- Deep ploughing to 30 cm depth — 2 cross ploughings + harrowing
+- Form ridges and furrows for transplanting (30 cm high ridges)
+- Soil pH optimum: 6.0–7.0 (slightly acidic to neutral)
+- Apply FYM/compost 20–25 t/ha at final ploughing — incorporate well
+
+3.2 MULCHING
+- Lay black polyethylene mulch (25–30 micron thick) on raised beds before planting
+- Mulch benefits: conserves moisture, suppresses weeds, prevents soil splash (reduces disease), warms soil in winter
+- Black mulch is standard; silver mulch repels whitefly (use for virus-prone areas)
+
+3.3 STAKING AND TRAINING
+- Indeterminate varieties require staking to prevent lodging
+- Use bamboo stakes (1.5–2 m height) or wire trellis system
+- Tie plants loosely with jute twine at every 20–25 cm as they grow
+- Pruning: Remove suckers (axillary shoots) for single/double stem training
+  - Single stem: highest fruit quality, lower yield per plant
+  - Double stem: balanced approach recommended for most commercial cultivation
+
+---
+
+SECTION 4: CROP DURATION AND YIELD EXPECTATIONS
+
+Crop Duration by Season:
+- Kharif (planted June-July): Harvest 70–90 days after transplanting (October–December)
+- Rabi (planted Oct-Nov): Harvest 80–100 days after transplanting (January–March)
+- Zaid/Summer (planted Jan-Feb): Harvest 60–75 days after transplanting (April–May)
+
+Expected Yield:
+- Open-pollinated varieties: 20–30 tonnes/hectare
+- Improved OP varieties: 30–40 tonnes/hectare
+- Hybrid varieties: 40–60 tonnes/hectare
+- Under protected cultivation (polyhouse): 100–150 tonnes/hectare
+
+Harvesting Indicators:
+- Breaker stage (first pink color): for distant markets (shelf life 7–10 days)
+- Pink to light red stage: for local markets (shelf life 3–5 days)
+- Full red (ripe): for processing or local consumption (shelf life 1–2 days)
+
+---
+
+SECTION 5: COMMON INSECTS AND PEST MANAGEMENT
+
+5.1 FRUIT BORER (Helicoverpa armigera)
+Most damaging insect pest of tomato in India.
+- Damage: Larvae bore into fruit causing up to 70% yield loss
+- Identification: Light green to dark brown caterpillars; frass (excrement) visible at entry hole
+- Management:
+  - Pheromone traps: 5 traps/acre for monitoring; 15 traps/acre for mass trapping
+  - Spray schedule: Emamectin benzoate 5% SG (0.4 g/L) or Spinosad 45% SC (0.3 mL/L)
+  - Biological: Bacillus thuringiensis (Bt) 2 g/L — spray at early instar larval stage
+  - Chemical: Chlorantraniliprole 18.5% SC (0.3 mL/L) — highly effective
+
+5.2 APHIDS (Myzus persicae, Aphis gossypii)
+- Suck plant sap; transmit viral diseases; cause curling of tender shoots
+- Management: Imidacloprid 17.8% SL (0.5 mL/L) or Thiamethoxam 25% WG (0.3 g/L)
+
+5.3 WHITEFLY (Bemisia tabaci) — Vector for Leaf Curl Virus
+- Use yellow sticky traps (20/acre); silver mulch; regular monitoring
+- Spray: Spiromesifen 22.9% SC (0.5 mL/L) or Diafenthiuron 50% WP (1.0 g/L)
+
+5.4 MITES (Polyphagotarsonemus latus — Broad mite)
+- Symptom: Downward curling of leaves, bronzing, hardening of tissue
+- Management: Abamectin 1.9% EC (0.5 mL/L) or Fenazaquin 10% EC (2.0 mL/L)
+
+---
+
+SECTION 6: POST-HARVEST MANAGEMENT
+
+Grading:
+- Grade A: > 100 g, uniform red, no blemishes — premium markets, export
+- Grade B: 60–100 g, slight blemishes — local markets
+- Grade C: < 60 g or overripe — processing industry
+
+Storage:
+- Mature green: 12–15°C, 85–90% RH, up to 4 weeks
+- Ripe tomatoes: 8–10°C, 85–90% RH, 1–2 weeks (cold chain required)
+- At room temperature (25–30°C): 3–5 days for ripe fruit
+
+Marketing:
+- Major wholesale markets: APMC markets in Nashik, Bangalore, Kolar
+- Minimum Support Price (MSP): Consult state agriculture department — varies seasonally
+- FPO (Farmer Producer Organization): Join local FPO for better price realization
+
+---
+Reference: ICAR-IIHR Bangalore, Technical Bulletin TB-HM-2023-09
+Document prepared for AgroAI Knowledge Base — verified factual content
