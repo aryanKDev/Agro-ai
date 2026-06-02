@@ -186,7 +186,7 @@
   "register_title": "Create Account",
   "register_subtitle": "Join AgroAI and protect your crops with AI",
   "register_name_label": "Full Name",
-  "register_name_placeholder": "Aryan Kushwaha",
+  "register_name_placeholder": "Your full name",
   "register_email_label": "Email Address",
   "register_email_placeholder": "you@example.com",
   "register_password_label": "Password",

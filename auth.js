@@ -160,6 +160,11 @@
       e.textContent = '';
       e.classList.add('hidden');
     });
+    // Reset all form inputs so no values persist between sessions
+    var fl = document.getElementById('form-login');
+    var fr = document.getElementById('form-register');
+    if (fl) fl.reset();
+    if (fr) fr.reset();
   }
 
   // ── Helpers ───────────────────────────────────────────────
