@@ -1393,3 +1393,1021 @@ const RAGChat = (() => {
 document.addEventListener('DOMContentLoaded', () => {
   RAGChat.init();
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// PHASE 4A — ADMIN INTELLIGENCE DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+const AdminDashboard = (() => {
+  'use strict';
+
+  const _charts = {};
+  let _loadedTabs = new Set();
+
+  // ── Chart.js defaults for admin theme ─────────────────────────────
+  function _def() {
+    return {
+      plugins: { legend: { labels: { color: '#94a3b8', font: { family: 'Inter' } } } },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    };
+  }
+
+  function _destroyChart(id) {
+    if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+  }
+
+  function _setEl(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = v;
+  }
+
+  function _authHeaders() {
+    return window.Auth ? Auth.getAuthHeaders() : {};
+  }
+
+  // ── Tab switching ─────────────────────────────────────────────────
+  function _initTabs() {
+    document.querySelectorAll('.admin-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
+        // Update active button
+        document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // Show correct panel
+        document.querySelectorAll('.admin-tab-content').forEach(p => p.classList.remove('active'));
+        const panel = document.getElementById('admin-panel-' + tab);
+        if (panel) panel.classList.add('active');
+        // Lazy-load tab data
+        if (!_loadedTabs.has(tab)) {
+          _loadTab(tab);
+        }
+      });
+    });
+  }
+
+  async function _loadTab(tab) {
+    _loadedTabs.add(tab);
+    const endpointMap = {
+      overview:    '/api/admin/overview',
+      agriculture: '/api/admin/agriculture',
+      rag:         '/api/admin/rag',
+      feedback:    '/api/admin/feedback',
+      languages:   '/api/admin/languages',
+    };
+    const url = endpointMap[tab];
+    if (!url) return;
+    try {
+      const res  = await fetch(API_URL + url, { headers: _authHeaders() });
+      if (!res.ok) {
+        if (res.status === 403) { _showAccessDenied(); return; }
+        throw new Error('HTTP ' + res.status);
+      }
+      const data = await res.json();
+      if (tab === 'overview')    _renderOverview(data);
+      if (tab === 'agriculture') _renderAgriculture(data);
+      if (tab === 'rag')         _renderRAG(data);
+      if (tab === 'feedback')    _renderFeedback(data);
+      if (tab === 'languages')   _renderLanguages(data);
+    } catch (e) {
+      console.error('[AdminDashboard] loadTab error:', tab, e);
+      if (window.Toast) Toast.show('Admin data load failed: ' + e.message, 'error');
+    }
+  }
+
+  // ── Show/hide access denied ────────────────────────────────────────
+  function _showAccessDenied() {
+    const denied  = document.getElementById('admin-access-denied');
+    const content = document.getElementById('admin-content');
+    if (denied)  denied.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
+  }
+
+  function _showContent() {
+    const denied  = document.getElementById('admin-access-denied');
+    const content = document.getElementById('admin-content');
+    if (denied)  denied.classList.add('hidden');
+    if (content) content.classList.remove('hidden');
+  }
+
+  // ── OVERVIEW TAB ─────────────────────────────────────────────────
+  function _renderOverview(data) {
+    _setEl('adm-total-users',    data.totalUsers   ?? '—');
+    _setEl('adm-active-users',   data.activeUsers  ?? '—');
+    _setEl('adm-total-scans',    data.totalScans   ?? '—');
+    _setEl('adm-total-feedback', data.totalFeedback ?? '—');
+    _setEl('adm-total-rag',      data.totalRagQueries ?? '—');
+    _setEl('adm-avg-scans',      data.avgScansPerUser ?? '—');
+    // 30-day growth chart uses scan data from agriculture tab — placeholder trend
+    // We'll draw a simple line using total scan count (single data point)
+    // A real trend needs per-day data; load it from the RAG trend if available
+    _destroyChart('growth');
+    const ctx = document.getElementById('adm-chart-growth');
+    if (ctx) {
+      // Generate simulated daily labels for demo when no trend data available
+      const labels = [], values = [];
+      const now = new Date();
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now - i * 86400000);
+        labels.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+        values.push(0);
+      }
+      const def = _def();
+      _charts.growth = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Daily Scans',
+            data: values,
+            borderColor: '#f59e0b',
+            backgroundColor: 'rgba(245,158,11,0.1)',
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#f59e0b',
+            pointRadius: 3,
+          }]
+        },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }
+
+  // ── AGRICULTURE TAB ───────────────────────────────────────────────
+  function _renderAgriculture(data) {
+    _setEl('adm-high-risk',   data.highRiskCount  ?? '—');
+    _setEl('adm-avg-risk',    (data.avgRiskScore ?? '—') + (data.avgRiskScore ? '%' : ''));
+    _setEl('adm-sev-high',    data.severityBreakdown?.HIGH   ?? '—');
+    _setEl('adm-sev-medium',  data.severityBreakdown?.MEDIUM ?? '—');
+
+    const def = _def();
+
+    // Top diseases bar chart
+    _destroyChart('diseases');
+    const dCtx = document.getElementById('adm-chart-diseases');
+    if (dCtx && data.topDiseases?.length) {
+      const labels = data.topDiseases.slice(0, 8).map(d => (d.disease || '').split('___').pop().replace(/_/g,' ').slice(0,18));
+      const values = data.topDiseases.slice(0, 8).map(d => d.count);
+      _charts.diseases = new Chart(dCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Cases', data: values, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: 'rgba(245,158,11,1)', borderWidth: 1, borderRadius: 6 }] },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+      });
+    }
+
+    // Most affected crops horizontal bar
+    _destroyChart('crops');
+    const cCtx = document.getElementById('adm-chart-crops');
+    if (cCtx && data.mostCommonCropIssues?.length) {
+      const labels = data.mostCommonCropIssues.map(c => c.crop);
+      const values = data.mostCommonCropIssues.map(c => c.count);
+      _charts.crops = new Chart(cCtx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Issues', data: values, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1, borderRadius: 6 }] },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Severity doughnut
+    _destroyChart('severity');
+    const sCtx = document.getElementById('adm-chart-severity');
+    if (sCtx && data.severityBreakdown) {
+      const sb = data.severityBreakdown;
+      _charts.severity = new Chart(sCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['HIGH', 'MEDIUM', 'LOW'],
+          datasets: [{ data: [sb.HIGH || 0, sb.MEDIUM || 0, sb.LOW || 0], backgroundColor: ['rgba(239,68,68,0.75)', 'rgba(245,158,11,0.75)', 'rgba(16,185,129,0.75)'], borderColor: ['rgba(239,68,68,1)', 'rgba(245,158,11,1)', 'rgba(16,185,129,1)'], borderWidth: 2 }]
+        },
+        options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '60%', responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Weather impact radar/bar
+    _destroyChart('weather');
+    const wCtx = document.getElementById('adm-chart-weather');
+    if (wCtx && data.weatherImpactSummary?.count) {
+      const ws = data.weatherImpactSummary;
+      _charts.weather = new Chart(wCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Avg Temp (°C)', 'Avg Humidity (%)', 'Avg Rain (%)'],
+          datasets: [{ label: 'High-Risk Conditions', data: [ws.avgTemp || 0, ws.avgHumidity || 0, ws.avgRain || 0], backgroundColor: ['rgba(239,68,68,0.6)', 'rgba(59,130,246,0.6)', 'rgba(16,185,129,0.6)'], borderColor: ['rgba(239,68,68,1)', 'rgba(59,130,246,1)', 'rgba(16,185,129,1)'], borderWidth: 1, borderRadius: 8 }]
+        },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }
+
+  // ── RAG TAB ────────────────────────────────────────────────────────
+  function _renderRAG(data) {
+    _setEl('adm-rag-total',    data.totalRagQueries  ?? '—');
+    _setEl('adm-rag-success',  (data.ragSuccessRate  ?? '—') + (data.ragSuccessRate != null ? '%' : ''));
+    _setEl('adm-rag-fallback', (data.fallbackRate    ?? '—') + (data.fallbackRate   != null ? '%' : ''));
+    _setEl('adm-rag-sources',  data.topSources?.length ?? '—');
+
+    const def = _def();
+
+    // Chat volume trend line chart
+    _destroyChart('ragTrend');
+    const tCtx = document.getElementById('adm-chart-rag-trend');
+    if (tCtx && data.chatVolumeTrend?.length) {
+      const labels = data.chatVolumeTrend.map(d => d.date);
+      const values = data.chatVolumeTrend.map(d => d.count);
+      _charts.ragTrend = new Chart(tCtx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'RAG Queries', data: values, borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: 'rgba(16,185,129,1)', pointRadius: 3 }] },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Category distribution doughnut
+    _destroyChart('ragCats');
+    const cCtx = document.getElementById('adm-chart-rag-categories');
+    if (cCtx && data.categoryDistribution?.length) {
+      const labels = data.categoryDistribution.map(c => c.category);
+      const values = data.categoryDistribution.map(c => c.count);
+      const colors = ['rgba(16,185,129,.7)','rgba(124,58,237,.7)','rgba(59,130,246,.7)','rgba(245,158,11,.7)','rgba(239,68,68,.7)','rgba(251,191,36,.7)','rgba(167,139,250,.7)','rgba(52,211,153,.7)'];
+      _charts.ragCats = new Chart(cCtx, {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors.slice(0, labels.length), borderWidth: 2, borderColor: 'rgba(15,15,26,1)' }] },
+        options: { plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } }, cutout: '55%', responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // RAG vs Fallback pie
+    _destroyChart('ragMode');
+    const mCtx = document.getElementById('adm-chart-rag-mode');
+    if (mCtx) {
+      const ragCount = Math.round((data.ragSuccessRate || 0) / 100 * (data.totalRagQueries || 0));
+      const fbkCount = (data.totalRagQueries || 0) - ragCount;
+      _charts.ragMode = new Chart(mCtx, {
+        type: 'doughnut',
+        data: { labels: ['RAG Success', 'Fallback'], datasets: [{ data: [ragCount, fbkCount], backgroundColor: ['rgba(16,185,129,0.75)', 'rgba(245,158,11,0.75)'], borderColor: ['rgba(16,185,129,1)', 'rgba(245,158,11,1)'], borderWidth: 2 }] },
+        options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '60%', responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Top questions table
+    const tbody = document.getElementById('adm-questions-tbody');
+    if (tbody && data.topQuestions?.length) {
+      tbody.innerHTML = data.topQuestions.map((q, i) => `
+        <tr>
+          <td class="rank-num">${i + 1}</td>
+          <td>${q.question}</td>
+          <td><span class="admin-count-badge">${q.count}</span></td>
+        </tr>`).join('');
+    } else if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text2)">No RAG queries yet</td></tr>';
+    }
+  }
+
+  // ── FEEDBACK TAB ──────────────────────────────────────────────────
+  function _renderFeedback(data) {
+    const avg  = data.avgRating;
+    _setEl('adm-fb-avg',   avg != null ? '⭐ ' + avg : '—');
+    _setEl('adm-fb-total', data.totalFeedback ?? '—');
+    _setEl('adm-fb-5star', data.ratingDistribution?.[5] ?? '—');
+    const low = (data.ratingDistribution?.[1] || 0) + (data.ratingDistribution?.[2] || 0);
+    _setEl('adm-fb-low', low || '—');
+
+    const def = _def();
+
+    // Rating distribution bars
+    const distEl = document.getElementById('adm-rating-dist');
+    if (distEl && data.ratingDistribution) {
+      const total = data.totalFeedback || 1;
+      distEl.innerHTML = [5,4,3,2,1].map(star => {
+        const count = data.ratingDistribution[star] || 0;
+        const pct   = Math.round(count / total * 100);
+        return `<div class="rating-dist-row">
+          <span class="rating-dist-label">${'★'.repeat(star)}</span>
+          <div class="rating-dist-bar-track"><div class="rating-dist-bar" style="width:${pct}%"></div></div>
+          <span class="rating-dist-count">${count}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Feedback trend line
+    _destroyChart('fbTrend');
+    const tCtx = document.getElementById('adm-chart-fb-trend');
+    if (tCtx && data.feedbackTrend?.length) {
+      const labels = data.feedbackTrend.map(d => d.date);
+      const values = data.feedbackTrend.map(d => d.count);
+      _charts.fbTrend = new Chart(tCtx, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Feedback', data: values, borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointBackgroundColor: '#fbbf24', pointRadius: 3 }] },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Keyword cloud
+    const cloudEl = document.getElementById('adm-keyword-cloud');
+    if (cloudEl && data.keywordFrequency?.length) {
+      const maxCount = data.keywordFrequency[0]?.count || 1;
+      cloudEl.innerHTML = data.keywordFrequency.map(kw => {
+        const ratio = kw.count / maxCount;
+        const cls   = ratio > 0.7 ? 'large' : ratio > 0.4 ? 'medium' : '';
+        return `<span class="admin-keyword-tag ${cls}">${kw.word} (${kw.count})</span>`;
+      }).join('');
+    } else if (cloudEl) {
+      cloudEl.innerHTML = '<span style="color:var(--text2);font-size:.85rem">No feedback data yet</span>';
+    }
+
+    // Latest feedback
+    const listEl = document.getElementById('adm-feedback-list');
+    if (listEl && data.latestFeedback?.length) {
+      const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+      listEl.innerHTML = data.latestFeedback.map(f => `
+        <div class="admin-feedback-item">
+          <div class="admin-feedback-stars">${'★'.repeat(f.rating || 0)}${'☆'.repeat(5 - (f.rating || 0))}</div>
+          <div class="admin-feedback-name">${f.name || 'Anonymous'}</div>
+          <div class="admin-feedback-text">${f.message || ''}</div>
+          <div class="admin-feedback-date">${fmt(f.date)}</div>
+        </div>`).join('');
+    } else if (listEl) {
+      listEl.innerHTML = '<div style="color:var(--text2);font-size:.85rem;padding:20px 0;text-align:center">No feedback yet</div>';
+    }
+  }
+
+  // ── LANGUAGES TAB ─────────────────────────────────────────────────
+  function _renderLanguages(data) {
+    _setEl('adm-lang-en-count', data.englishCount    ?? '—');
+    _setEl('adm-lang-hi-count', data.hindiCount      ?? '—');
+    _setEl('adm-lang-top',      data.mostUsedLanguage ?? '—');
+    _setEl('adm-lang-total',    (data.englishCount || 0) + (data.hindiCount || 0));
+
+    // Usage bars
+    const enBar  = document.getElementById('adm-lang-en-bar');
+    const hiBar  = document.getElementById('adm-lang-hi-bar');
+    const enPct  = document.getElementById('adm-lang-en-pct');
+    const hiPct  = document.getElementById('adm-lang-hi-pct');
+    setTimeout(() => {
+      if (enBar) enBar.style.width = (data.englishPct || 0) + '%';
+      if (hiBar) hiBar.style.width = (data.hindiPct  || 0) + '%';
+    }, 100);
+    if (enPct) enPct.textContent = (data.englishPct || 0) + '%';
+    if (hiPct) hiPct.textContent = (data.hindiPct  || 0) + '%';
+
+    const def = _def();
+
+    // Language pie
+    _destroyChart('langPie');
+    const pCtx = document.getElementById('adm-chart-lang-pie');
+    if (pCtx) {
+      _charts.langPie = new Chart(pCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['English', 'Hindi'],
+          datasets: [{ data: [data.englishCount || 0, data.hindiCount || 0], backgroundColor: ['rgba(124,58,237,0.75)', 'rgba(16,185,129,0.75)'], borderColor: ['rgba(124,58,237,1)', 'rgba(16,185,129,1)'], borderWidth: 2 }]
+        },
+        options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, cutout: '60%', responsive: true, maintainAspectRatio: false }
+      });
+    }
+
+    // Language trend stacked line
+    _destroyChart('langTrend');
+    const lCtx = document.getElementById('adm-chart-lang-trend');
+    if (lCtx && data.languageTrend?.length) {
+      const labels = data.languageTrend.map(d => d.date);
+      const enData = data.languageTrend.map(d => d.english);
+      const hiData = data.languageTrend.map(d => d.hindi);
+      _charts.langTrend = new Chart(lCtx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            { label: 'English', data: enData, borderColor: 'rgba(124,58,237,1)', backgroundColor: 'rgba(124,58,237,0.12)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 2 },
+            { label: 'Hindi',   data: hiData, borderColor: 'rgba(16,185,129,1)',  backgroundColor: 'rgba(16,185,129,0.12)',  borderWidth: 2, tension: 0.4, fill: true, pointRadius: 2 }
+          ]
+        },
+        options: { plugins: { legend: { labels: { color: '#94a3b8' } } }, scales: def.scales, responsive: true, maintainAspectRatio: false }
+      });
+    }
+  }
+
+  // ── Public: render (called by Router when page == 'admin') ─────────
+  async function render() {
+    // Gate: must be logged in
+    if (!window.Auth || !Auth.isLoggedIn()) {
+      _showAccessDenied();
+      return;
+    }
+
+    // Check role from stored user object first (fast)
+    const user = Auth.getUser();
+    if (user && user.role !== 'admin') {
+      _showAccessDenied();
+      return;
+    }
+
+    _showContent();
+    _initTabs();
+
+    // Automatically load overview tab on first render
+    if (!_loadedTabs.has('overview')) {
+      await _loadTab('overview');
+    }
+  }
+
+  // ── Public: reset (called on logout) ─────────────────────────────
+  function reset() {
+    _loadedTabs.clear();
+    Object.keys(_charts).forEach(k => { if (_charts[k]) { _charts[k].destroy(); delete _charts[k]; } });
+  }
+
+  return { render, reset };
+})();
+
+// ── Extend Router to include admin page ──────────────────────────────────────
+(function _patchRouter() {
+  const orig = Router.navigate.bind(Router);
+  Router.pages.push('admin');
+  Router.pages.push('plants');   // Phase 4B — add here so page toggle includes it
+  Router.navigate = function(page) {
+    this.pages.forEach(p => {
+      const el = document.getElementById('page-' + p);
+      if (el) el.classList.toggle('hidden', p !== page);
+    });
+    document.querySelectorAll('.nav-page-link').forEach(a => {
+      a.classList.toggle('active-nav', a.dataset.page === page);
+    });
+    const navLinks = document.getElementById('nav-links');
+    if (navLinks) navLinks.classList.remove('open');
+    this.current = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (page === 'history')   HistoryManager.render();
+    if (page === 'analytics') Analytics.render();
+    if (page === 'feedback')  Feedback.render();
+    if (page === 'profile')   ProfilePage.render();
+    if (page === 'admin')     AdminDashboard.render();
+    if (page === 'plants')    PlantTracker.render();   // Phase 4B
+  };
+})();
+
+// ── Wire admin nav badge ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const btnAdmin = document.getElementById('btn-nav-admin');
+  if (btnAdmin) {
+    btnAdmin.addEventListener('click', e => {
+      e.preventDefault();
+      Router.navigate('admin');
+    });
+  }
+});
+
+// ── On logout: reset admin dashboard state ───────────────────────────────────
+document.addEventListener('agroai:auth', e => {
+  if (e.detail?.type === 'logout') {
+    AdminDashboard.reset();
+    PlantTracker.reset();
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// PHASE 4B — PlantTracker Module
+// ════════════════════════════════════════════════════════════════════════════
+const PlantTracker = (() => {
+  'use strict';
+
+  // ── State ─────────────────────────────────────────────────────────────────
+  let _plants        = [];
+  let _selectedId    = null;
+  let _charts        = {};
+  let _lastScanData  = null;   // holds current predict result for tracking
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function _token() {
+    // auth.js stores JWT under 'agroai_jwt' — match that key exactly
+    return window.Auth?.getToken?.() || localStorage.getItem('agroai_jwt') || '';
+  }
+
+  function _authHeaders() {
+    // Reuse Auth.getAuthHeaders() if available (returns {} when logged out)
+    if (window.Auth?.getToken?.()) {
+      return Object.assign({ 'Content-Type': 'application/json' }, window.Auth.getAuthHeaders());
+    }
+    const t = localStorage.getItem('agroai_jwt') || '';
+    return t
+      ? { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + t }
+      : { 'Content-Type': 'application/json' };
+  }
+
+  function _fmt(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function _fmtShort(iso) {
+    if (!iso) return '?';
+    return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+
+  function _diseaseLabel(d) {
+    if (!d) return 'No scan yet';
+    return d.split('___').pop().replace(/_/g, ' ');
+  }
+
+  function _trendClass(t)  { return 'trend-' + (t || 'stable'); }
+  function _trendIcon(t)   { return t === 'recovering' ? '↗' : t === 'worsening' ? '↘' : '→'; }
+  function _trendLabel(t)  { return t === 'recovering' ? 'Recovering' : t === 'worsening' ? 'Worsening' : 'Stable'; }
+
+  function _riskPillClass(r) {
+    if (r >= 70) return 'risk-high';
+    if (r >= 40) return 'risk-med';
+    return 'risk-low';
+  }
+
+  function _destroyChart(key) {
+    if (_charts[key]) { _charts[key].destroy(); delete _charts[key]; }
+  }
+
+  // Chart defaults (matches existing Admin/Analytics style)
+  function _def() {
+    return {
+      plugins: { legend: { display: false }, tooltip: { callbacks: {} } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+        y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+      },
+    };
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────────
+  async function _fetchPlants() {
+    const res  = await fetch('/api/plants', { headers: _authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load plants');
+    return data;
+  }
+
+  async function _fetchHistory(plantId) {
+    const res  = await fetch(`/api/plants/${plantId}/history`, { headers: _authHeaders() });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to load plant history');
+    return data;
+  }
+
+  async function _apiCreateTrack(plantName) {
+    const res  = await fetch('/api/plants/track', {
+      method: 'POST', headers: _authHeaders(),
+      body: JSON.stringify({ plantName }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to create plant');
+    return data;
+  }
+
+  async function _apiAddScan(plantId, scanPayload) {
+    const res  = await fetch(`/api/plants/${plantId}/scan`, {
+      method: 'POST', headers: _authHeaders(),
+      body: JSON.stringify(scanPayload),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to log scan');
+    return data;
+  }
+
+  // ── KPI render ────────────────────────────────────────────────────────────
+  function _renderKPIs(analytics) {
+    const a = analytics || {};
+    const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    setEl('pkpi-total',        a.totalTracked    ?? 0);
+    setEl('pkpi-recovery',     a.avgRecoveryRate != null ? a.avgRecoveryRate + '%' : '—');
+    setEl('pkpi-high-risk',    a.highRiskPlants  ?? 0);
+    setEl('pkpi-most-improved', a.mostImprovedPlant ?? '—');
+  }
+
+  // ── Plant Cards ───────────────────────────────────────────────────────────
+  function _renderCards(plants) {
+    const grid  = document.getElementById('plants-grid');
+    const empty = document.getElementById('plants-empty');
+    const count = document.getElementById('plants-count');
+    if (!grid) return;
+
+    if (count) count.textContent = plants.length
+      ? `${plants.length} plant${plants.length !== 1 ? 's' : ''} tracked`
+      : '0 plants tracked';
+
+    if (!plants.length) {
+      grid.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+
+    grid.innerHTML = plants.map(p => {
+      const trend    = p.trend || 'stable';
+      const disease  = _diseaseLabel(p.latestDisease);
+      const lastScan = _fmt(p.latestScanDate);
+      const risk     = p.latestRiskScore ?? 0;
+      const riskCls  = risk >= 70 ? 'sev-high' : risk >= 40 ? 'sev-medium' : 'sev-low';
+      return `
+        <div class="plant-card" data-plant-id="${p.id}">
+          <div class="plant-card-header">
+            <div class="plant-card-avatar">🌿</div>
+            <div class="plant-card-meta">
+              <div class="plant-card-name" title="${p.plantName}">${p.plantName}</div>
+              <div class="plant-card-disease">${disease}</div>
+            </div>
+          </div>
+          <div class="plant-card-body">
+            <div class="plant-card-stats">
+              <div class="plant-card-stat">
+                <div class="plant-card-stat-value">${p.totalScans}</div>
+                <div class="plant-card-stat-label">Scans</div>
+              </div>
+              <div class="plant-card-stat">
+                <div class="plant-card-stat-value ${riskCls}" style="font-size:.85rem;padding:2px 0">${risk}%</div>
+                <div class="plant-card-stat-label">Risk</div>
+              </div>
+              <div class="plant-card-stat">
+                <div class="plant-card-stat-value" style="font-size:.7rem">${lastScan}</div>
+                <div class="plant-card-stat-label">Last Scan</div>
+              </div>
+            </div>
+          </div>
+          <div class="plant-card-footer">
+            <span class="plant-card-time">Since ${_fmt(p.createdAt)}</span>
+            <span class="plant-trend-badge ${_trendClass(trend)}">${_trendIcon(trend)} ${_trendLabel(trend)}</span>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Click → open detail
+    grid.querySelectorAll('.plant-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const pid = card.dataset.plantId;
+        _openDetail(pid);
+        grid.querySelectorAll('.plant-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+      });
+    });
+  }
+
+  // ── Detail Panel ─────────────────────────────────────────────────────────
+  async function _openDetail(plantId) {
+    _selectedId = plantId;
+    const panel = document.getElementById('plant-detail-panel');
+    if (!panel) return;
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Clear old charts
+    ['confidence','risk','recovery','health'].forEach(k => _destroyChart(k));
+
+    // Loading state
+    document.getElementById('detail-plant-name').textContent = 'Loading…';
+
+    try {
+      const data = await _fetchHistory(plantId);
+      _populateDetail(data);
+    } catch (e) {
+      window.Toast?.show('Failed to load plant history: ' + e.message, 'error');
+    }
+  }
+
+  function _populateDetail(data) {
+    const { plant, scans, analytics } = data;
+    if (!plant) return;
+
+    // Header
+    document.getElementById('detail-plant-name').textContent  = plant.plantName;
+    document.getElementById('detail-total-scans').textContent = `${analytics.totalScans} scan${analytics.totalScans !== 1 ? 's' : ''}`;
+    document.getElementById('detail-latest-disease').textContent = _diseaseLabel(scans[scans.length - 1]?.disease) || '—';
+    document.getElementById('detail-last-scan').textContent   = scans.length ? _fmt(scans[scans.length - 1].scanDate) : '—';
+
+    // Analytics strip
+    document.getElementById('det-avg-conf').textContent    = analytics.avgConfidence + '%';
+    document.getElementById('det-avg-risk').textContent    = analytics.avgRiskScore + '%';
+    document.getElementById('det-recovery').textContent    = analytics.recoveryRate + '%';
+    document.getElementById('det-high-risk').textContent   = analytics.highRiskCount;
+
+    // Charts + timeline
+    _renderCharts(scans);
+    _renderTimeline(scans);
+  }
+
+  // ── 4 Chart.js Charts ────────────────────────────────────────────────────
+  function _renderCharts(scans) {
+    if (!scans?.length) return;
+    const labels     = scans.map(s => _fmtShort(s.scanDate));
+    const conf       = scans.map(s => s.confidence);
+    const risk       = scans.map(s => s.riskScore);
+    const recovery   = scans.map(s => Math.max(0, 100 - s.riskScore));
+    const health     = scans.map(s => s.healthScore);
+    const def        = _def();
+
+    const lineOpts = (bColor, bgColor) => ({
+      plugins: def.plugins, scales: def.scales,
+      responsive: true, maintainAspectRatio: false,
+      elements: { line: { tension: 0.4 } },
+    });
+
+    // 1. Confidence
+    _destroyChart('confidence');
+    const c1 = document.getElementById('chart-confidence-trend');
+    if (c1) {
+      _charts.confidence = new Chart(c1, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Confidence %', data: conf,
+          borderColor: 'rgba(124,58,237,1)', backgroundColor: 'rgba(124,58,237,0.12)',
+          borderWidth: 2, fill: true, pointBackgroundColor: 'rgba(124,58,237,1)', pointRadius: 4 }] },
+        options: lineOpts(),
+      });
+    }
+
+    // 2. Risk Trend
+    _destroyChart('risk');
+    const c2 = document.getElementById('chart-risk-trend');
+    if (c2) {
+      _charts.risk = new Chart(c2, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Risk Score %', data: risk,
+          borderColor: 'rgba(239,68,68,1)', backgroundColor: 'rgba(239,68,68,0.1)',
+          borderWidth: 2, fill: true, pointBackgroundColor: 'rgba(239,68,68,1)', pointRadius: 4 }] },
+        options: lineOpts(),
+      });
+    }
+
+    // 3. Recovery Trend (100 - riskScore)
+    _destroyChart('recovery');
+    const c3 = document.getElementById('chart-recovery-trend');
+    if (c3) {
+      _charts.recovery = new Chart(c3, {
+        type: 'line',
+        data: { labels, datasets: [{ label: 'Recovery %', data: recovery,
+          borderColor: 'rgba(16,185,129,1)', backgroundColor: 'rgba(16,185,129,0.12)',
+          borderWidth: 2, fill: true, pointBackgroundColor: 'rgba(16,185,129,1)', pointRadius: 4 }] },
+        options: lineOpts(),
+      });
+    }
+
+    // 4. Health Score (colored bars)
+    _destroyChart('health');
+    const c4 = document.getElementById('chart-health-trend');
+    if (c4) {
+      const bgColors = health.map(h =>
+        h >= 70 ? 'rgba(16,185,129,0.75)' : h >= 40 ? 'rgba(245,158,11,0.75)' : 'rgba(239,68,68,0.75)'
+      );
+      const borderColors = health.map(h =>
+        h >= 70 ? 'rgba(16,185,129,1)' : h >= 40 ? 'rgba(245,158,11,1)' : 'rgba(239,68,68,1)'
+      );
+      _charts.health = new Chart(c4, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Health Score', data: health,
+          backgroundColor: bgColors, borderColor: borderColors, borderWidth: 1, borderRadius: 6 }] },
+        options: { plugins: def.plugins, scales: def.scales, responsive: true, maintainAspectRatio: false },
+      });
+    }
+  }
+
+  // ── Scan Timeline ─────────────────────────────────────────────────────────
+  function _renderTimeline(scans) {
+    const tl = document.getElementById('scan-timeline');
+    if (!tl) return;
+    if (!scans?.length) {
+      tl.innerHTML = '<div style="color:var(--text2);font-size:.88rem;text-align:center;padding:24px 0">No scans recorded yet.</div>';
+      return;
+    }
+    // Show newest first in timeline
+    const reversed = [...scans].reverse();
+    tl.innerHTML = reversed.map((s, i) => {
+      const isLast   = i === reversed.length - 1;
+      const dotCls   = s.riskScore >= 70 ? 'high-risk' : (s.disease?.toLowerCase().includes('healthy') ? 'healthy' : 'diseased');
+      const riskCls  = _riskPillClass(s.riskScore);
+      const imgHtml  = s.imageUrl
+        ? `<img class="scan-tl-img" src="${s.imageUrl}" alt="scan" onerror="this.style.display='none'">`
+        : '';
+      return `
+        <div class="scan-timeline-item">
+          <div class="scan-tl-dot-wrap">
+            <div class="scan-tl-dot ${dotCls}"></div>
+            ${!isLast ? '<div class="scan-tl-line"></div>' : ''}
+          </div>
+          <div class="scan-tl-content">
+            <div class="scan-tl-disease">${_diseaseLabel(s.disease)}</div>
+            <div class="scan-tl-meta">
+              <span class="scan-tl-date">${_fmt(s.scanDate)}</span>
+              <div class="scan-tl-pills">
+                <span class="scan-tl-pill conf">Conf ${s.confidence}%</span>
+                <span class="scan-tl-pill ${riskCls}">Risk ${s.riskScore}%</span>
+              </div>
+            </div>
+          </div>
+          ${imgHtml}
+        </div>`;
+    }).join('');
+  }
+
+  // ── Track Modal ───────────────────────────────────────────────────────────
+  function _openModal(lastScan) {
+    _lastScanData = lastScan;
+    const modal = document.getElementById('track-modal');
+    if (!modal) return;
+
+    // Populate dropdown
+    const sel = document.getElementById('track-plant-select');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select a plant —</option>' +
+        _plants.map(p => `<option value="${p.id}">${p.plantName}</option>`).join('');
+    }
+
+    // Pre-fill name from disease
+    const nameInput = document.getElementById('track-new-plant-name');
+    if (nameInput && lastScan?.disease) {
+      const crop = lastScan.disease.split('___')[0].replace(/_/g, ' ');
+      nameInput.value = crop ? `My ${_capitalise(crop)} Plant` : '';
+    }
+
+    // Hide existing section if no plants yet
+    const existSec = document.getElementById('track-existing-section');
+    if (existSec) existSec.classList.toggle('hidden', _plants.length === 0);
+
+    document.getElementById('track-error')?.classList.add('hidden');
+    modal.classList.add('active');
+  }
+
+  function _closeModal() {
+    document.getElementById('track-modal')?.classList.remove('active');
+  }
+
+  function _capitalise(s) {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function _showModalError(msg) {
+    const el = document.getElementById('track-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+  }
+
+  // ── Public: render (called by Router) ────────────────────────────────────
+  async function render() {
+    console.log('[PlantTracker] render() called | isLoggedIn:', window.Auth?.isLoggedIn());
+
+    const pagEl   = document.getElementById('page-plants');
+    const gate    = document.getElementById('plants-login-gate');
+    const content = document.getElementById('plants-content');
+
+    // Belt + suspenders: ensure page itself is not hidden
+    if (pagEl) { pagEl.classList.remove('hidden'); pagEl.style.display = ''; }
+
+    if (!window.Auth?.isLoggedIn()) {
+      console.log('[PlantTracker] Not logged in — showing login gate');
+      if (gate)    { gate.classList.remove('hidden'); gate.style.display = ''; }
+      if (content) { content.classList.add('hidden'); content.style.display = 'none'; }
+      return;
+    }
+
+    // Show content, hide gate
+    if (gate)    { gate.classList.add('hidden'); gate.style.display = 'none'; }
+    if (content) { content.classList.remove('hidden'); content.style.display = ''; }
+    console.log('[PlantTracker] Auth OK — fetching /api/plants');
+
+    try {
+      const h = Object.assign({'Content-Type':'application/json'}, window.Auth.getAuthHeaders());
+      console.log('[PlantTracker] Authorization header:', h['Authorization']?.slice(0,30) + '...');
+      const res  = await fetch('/api/plants', { headers: h });
+      console.log('[PlantTracker] /api/plants status:', res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      console.log('[PlantTracker] Response | plants:', data.plants?.length, '| analytics:', JSON.stringify(data.analytics));
+      _plants = data.plants || [];
+      _renderKPIs(data.analytics || {});
+      _renderCards(_plants);
+      console.log('[PlantTracker] Render complete');
+    } catch (e) {
+      console.error('[PlantTracker] Error:', e.message);
+      window.Toast?.show('Could not load plants: ' + e.message, 'error');
+      _renderCards([]);
+    }
+  }
+
+  // ── Public: reset (on logout) ─────────────────────────────────────────────
+  function reset() {
+    _plants      = [];
+    _selectedId  = null;
+    _lastScanData = null;
+    ['confidence','risk','recovery','health'].forEach(k => _destroyChart(k));
+    const panel = document.getElementById('plant-detail-panel');
+    panel?.classList.add('hidden');
+    document.getElementById('plants-grid') && (document.getElementById('plants-grid').innerHTML = '');
+  }
+
+  // ── Wire up DOM events ────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+
+    // Close detail panel
+    document.getElementById('plant-detail-close')?.addEventListener('click', () => {
+      document.getElementById('plant-detail-panel')?.classList.add('hidden');
+      document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('selected'));
+      _selectedId = null;
+    });
+
+    // Explicit Plants nav click — safety net in addition to generic [data-page] wiring
+    const navPlantsLink = document.getElementById('nav-plants-link');
+    if (navPlantsLink) {
+      navPlantsLink.addEventListener('click', e => {
+        e.preventDefault();
+        if (window.Router) Router.navigate('plants');
+      });
+    }
+
+    // Add New Plant button → open modal with no scan data
+    document.getElementById('btn-add-plant')?.addEventListener('click', () => {
+      _openModal(null);
+    });
+
+    // Track This Plant button (result card) → open modal with scan data
+    document.getElementById('track-plant-btn')?.addEventListener('click', () => {
+      if (!window.Auth?.isLoggedIn()) {
+        window.Toast?.show('Please login to track plants', 'error');
+        return;
+      }
+      // Gather last prediction state from DOM
+      const diseaseEl = document.getElementById('prediction-output');
+      const riskEl    = document.querySelector('.risk-score-label');
+      const confEl    = document.querySelector('.confidence-value');
+      const imgEl     = document.querySelector('.image-preview img');
+      const disease   = diseaseEl?.textContent?.trim() || 'Unknown';
+      const confidence = parseFloat(confEl?.textContent) || 0;
+      const riskScore  = parseInt(riskEl?.textContent) || 0;
+      const imageUrl   = imgEl?.src || '';
+
+      // Get weather snapshot from DOM
+      const weatherSnap = {};
+      ['temp','humidity','rain'].forEach(k => {
+        const el = document.querySelector(`[data-weather="${k}"]`);
+        if (el) weatherSnap[k] = el.textContent;
+      });
+
+      _openModal({ disease, confidence, riskScore, imageUrl, weatherSnapshot: weatherSnap });
+    });
+
+    // Modal: close button
+    document.getElementById('track-modal-close')?.addEventListener('click', _closeModal);
+    document.getElementById('track-modal')?.addEventListener('click', e => {
+      if (e.target === document.getElementById('track-modal')) _closeModal();
+    });
+
+    // Modal: log scan to existing plant
+    document.getElementById('track-existing-btn')?.addEventListener('click', async () => {
+      const plantId = document.getElementById('track-plant-select')?.value;
+      if (!plantId) { _showModalError('Please select a plant.'); return; }
+      const btn = document.getElementById('track-existing-btn');
+      btn.disabled = true; btn.textContent = 'Saving…';
+      try {
+        await _apiAddScan(plantId, _lastScanData || {});
+        _closeModal();
+        window.Toast?.show('✅ Scan logged to plant successfully!', 'success');
+        if (Router?.current === 'plants') render();
+      } catch (e) {
+        _showModalError(e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '✅ Log Scan to Selected Plant';
+      }
+    });
+
+    // Modal: create new plant + log scan
+    document.getElementById('track-create-btn')?.addEventListener('click', async () => {
+      const name = document.getElementById('track-new-plant-name')?.value?.trim();
+      if (!name) { _showModalError('Please enter a plant name.'); return; }
+      const btn = document.getElementById('track-create-btn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+      try {
+        const created = await _apiCreateTrack(name);
+        if (_lastScanData) {
+          await _apiAddScan(created.plantId, _lastScanData);
+        }
+        _closeModal();
+        window.Toast?.show(`🌱 "${name}" created and scan logged!`, 'success');
+        if (Router?.current === 'plants') render();
+        else { _plants.push({ id: created.plantId, plantName: name, totalScans: _lastScanData ? 1 : 0, trend: 'stable', latestRiskScore: 0, latestDisease: null, latestScanDate: null, createdAt: new Date().toISOString() }); }
+      } catch (e) {
+        _showModalError(e.message);
+      } finally {
+        btn.disabled = false; btn.textContent = '🌱 Create & Track';
+      }
+    });
+
+    // Go scan button in empty state
+    document.getElementById('plants-go-scan-btn')?.addEventListener('click', () => Router?.navigate('home'));
+
+    // Login gate button — use Auth.showLogin() directly
+    document.getElementById('plants-gate-login-btn')?.addEventListener('click', () => {
+      window.Auth?.showLogin?.();
+    });
+  });
+
+  return { render, reset };
+})();
+
+// Expose on window so auth handlers and future code can reference it safely
+window.PlantTracker = PlantTracker;
+
+// Plants page navigation is handled in the _patchRouter() IIFE above.
+// Router.pages already includes 'plants' and PlantTracker.render() is called there.

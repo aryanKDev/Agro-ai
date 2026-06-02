@@ -50,6 +50,7 @@
         <a href="#" class="nav-link nav-page-link active-nav" data-page="home" data-i18n="nav_home">🏠 Home</a>
         <a href="#" class="nav-link nav-page-link" data-page="history" data-i18n="nav_history">📋 History</a>
         <a href="#" class="nav-link nav-page-link" data-page="analytics" data-i18n="nav_analytics">📊 Analytics</a>
+        <a href="#" class="nav-link nav-page-link" data-page="plants" id="nav-plants-link">🌿 Plants</a>
         <a href="#" class="nav-link nav-page-link" data-page="feedback" data-i18n="nav_feedback">⭐ Feedback</a>
         <!-- LANGUAGE TOGGLE -->
         <div class="lang-toggle" id="lang-toggle" role="group" aria-label="Language selector">
@@ -65,6 +66,7 @@
         <div class="nav-auth-group hidden" id="nav-auth-links">
           <span class="nav-welcome-pill" id="nav-welcome-pill">👤 User</span>
           <a href="#" class="nav-link nav-page-link" data-page="profile" id="btn-nav-profile" data-i18n="nav_profile">Profile</a>
+          <a href="#" class="nav-admin-badge hidden" id="btn-nav-admin" data-page="admin">⚙️ Admin</a>
           <a href="#" class="nav-link nav-logout-link" id="btn-nav-logout" data-i18n="nav_logout">Logout</a>
         </div>
         <a href="#detector" class="nav-cta-btn" id="nav-cta" data-i18n="nav_try_free">Try Free →</a>
@@ -210,6 +212,7 @@
             <div class="result-actions">
               <button class="btn-pdf" id="download-pdf-btn">📄 Download AI Report</button>
               <button class="btn-ghost btn-sm" id="save-history-manual-btn">💾 Save to History</button>
+              <button class="btn-track" id="track-plant-btn">🌱 Track This Plant</button>
             </div>
 
             <!-- RISK ANALYSIS CARD -->
@@ -670,6 +673,354 @@
         <button type="submit" class="auth-btn" id="btn-register-submit">Create Account</button>
       </form>
       <p class="auth-modal-switch">Already have an account? <a href="#" id="link-go-login">Sign in →</a></p>
+    </div>
+  </div>
+
+  <!-- ══════════════ ADMIN DASHBOARD PAGE ══════════════ -->
+  <div id="page-admin" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+
+        <!-- Access Denied (shown if not admin) -->
+        <div id="admin-access-denied" class="admin-access-denied hidden">
+          <div class="admin-access-denied-icon">🔒</div>
+          <h2>Access Denied</h2>
+          <p>You need admin privileges to access this dashboard.</p>
+          <button class="btn-primary" onclick="Router.navigate('home')" style="margin:0 auto;display:inline-flex">← Back to Home</button>
+        </div>
+
+        <!-- Admin Content (shown only to admin role) -->
+        <div id="admin-content" class="hidden">
+
+          <!-- Hero Banner -->
+          <div class="admin-hero-banner">
+            <div class="admin-hero-icon">⚙️</div>
+            <div class="admin-hero-content">
+              <h1>Admin Intelligence Dashboard <span class="admin-hero-badge">🔴 LIVE</span></h1>
+              <p>Platform analytics, agriculture intelligence, RAG metrics, feedback insights, and language trends — all in one place.</p>
+            </div>
+          </div>
+
+          <!-- Tab Navigation -->
+          <div class="admin-tabs" id="admin-tabs">
+            <button class="admin-tab-btn active" data-tab="overview" id="admin-tab-overview">📊 Overview</button>
+            <button class="admin-tab-btn" data-tab="agriculture" id="admin-tab-agriculture">🌾 Agriculture</button>
+            <button class="admin-tab-btn" data-tab="rag" id="admin-tab-rag">🤖 RAG Analytics</button>
+            <button class="admin-tab-btn" data-tab="feedback" id="admin-tab-feedback">⭐ Feedback</button>
+            <button class="admin-tab-btn" data-tab="languages" id="admin-tab-languages">🌐 Languages</button>
+          </div>
+
+          <!-- ═══════════ TAB: OVERVIEW ═══════════ -->
+          <div class="admin-tab-content active" id="admin-panel-overview">
+            <div class="admin-kpi-grid" id="admin-overview-kpis">
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">👥</div><div class="admin-kpi-value" id="adm-total-users">—</div><div class="admin-kpi-label">Total Users</div></div>
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">🟢</div><div class="admin-kpi-value" id="adm-active-users">—</div><div class="admin-kpi-label">Active Users (30d)</div></div>
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">🔬</div><div class="admin-kpi-value" id="adm-total-scans">—</div><div class="admin-kpi-label">Total Scans</div></div>
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">⭐</div><div class="admin-kpi-value" id="adm-total-feedback">—</div><div class="admin-kpi-label">Total Feedback</div></div>
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">🤖</div><div class="admin-kpi-value" id="adm-total-rag">—</div><div class="admin-kpi-label">Total RAG Queries</div></div>
+              <div class="admin-kpi-card"><div class="admin-kpi-icon">📈</div><div class="admin-kpi-value" id="adm-avg-scans">—</div><div class="admin-kpi-label">Avg Scans / User</div></div>
+            </div>
+            <div class="admin-charts-grid">
+              <div class="glass-card admin-chart-card admin-chart-full">
+                <div class="admin-chart-title">📅 Platform Growth (30-Day Scan Trend)</div>
+                <div class="admin-chart-wrap tall"><canvas id="adm-chart-growth"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: AGRICULTURE ═══════════ -->
+          <div class="admin-tab-content" id="admin-panel-agriculture">
+            <div class="admin-info-grid">
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-high-risk">—</div><div class="admin-info-label">🔴 High Risk Cases</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-avg-risk">—</div><div class="admin-info-label">📊 Avg Risk Score</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-sev-high">—</div><div class="admin-info-label">⚠️ HIGH Severity</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-sev-medium">—</div><div class="admin-info-label">🟡 MEDIUM Severity</div></div>
+            </div>
+            <div class="admin-charts-grid">
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🦠 Top Diseases (Frequency)</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-diseases"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🌾 Most Affected Crops</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-crops"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">⚠️ Severity Distribution</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-severity"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🌦️ Weather Impact (High-Risk Avg)</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-weather"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: RAG ANALYTICS ═══════════ -->
+          <div class="admin-tab-content" id="admin-panel-rag">
+            <div class="admin-info-grid">
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-rag-total">—</div><div class="admin-info-label">🤖 Total Queries</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-rag-success">—</div><div class="admin-info-label">✅ RAG Success Rate</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-rag-fallback">—</div><div class="admin-info-label">⚡ Fallback Rate</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-rag-sources">—</div><div class="admin-info-label">📄 Unique Sources</div></div>
+            </div>
+            <div class="admin-charts-grid">
+              <div class="glass-card admin-chart-card admin-chart-full">
+                <div class="admin-chart-title">💬 Chat Volume Trend (30 Days)</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-rag-trend"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">📚 Knowledge Category Distribution</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-rag-categories"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🔥 RAG vs Fallback</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-rag-mode"></canvas></div>
+              </div>
+            </div>
+            <div class="glass-card admin-table-card" style="margin-top:0">
+              <div class="admin-chart-title">❓ Top 10 Questions</div>
+              <table class="admin-table" id="adm-table-questions">
+                <thead><tr><th>#</th><th>Question</th><th>Count</th></tr></thead>
+                <tbody id="adm-questions-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: FEEDBACK ═══════════ -->
+          <div class="admin-tab-content" id="admin-panel-feedback">
+            <div class="admin-info-grid">
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-fb-avg">—</div><div class="admin-info-label">⭐ Avg Rating</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-fb-total">—</div><div class="admin-info-label">📝 Total Responses</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-fb-5star">—</div><div class="admin-info-label">🌟 5-Star Reviews</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-fb-low">—</div><div class="admin-info-label">⚠️ Low Ratings (1-2)</div></div>
+            </div>
+            <div class="admin-two-col">
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">⭐ Rating Distribution</div>
+                <div id="adm-rating-dist"></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">📈 Feedback Trend (30 Days)</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-fb-trend"></canvas></div>
+              </div>
+            </div>
+            <div class="admin-two-col" style="margin-top:0">
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🏷️ Common Keywords</div>
+                <div class="admin-keyword-cloud" id="adm-keyword-cloud"></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">💬 Latest Feedback</div>
+                <div class="admin-feedback-list" id="adm-feedback-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════ TAB: LANGUAGES ═══════════ -->
+          <div class="admin-tab-content" id="admin-panel-languages">
+            <div class="admin-info-grid">
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-lang-en-count">—</div><div class="admin-info-label">🇬🇧 English Queries</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-lang-hi-count">—</div><div class="admin-info-label">🇮🇳 Hindi Queries</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-lang-top">—</div><div class="admin-info-label">🏆 Most Used Language</div></div>
+              <div class="admin-info-card"><div class="admin-info-value" id="adm-lang-total">—</div><div class="admin-info-label">💬 Total Conversations</div></div>
+            </div>
+            <div class="admin-two-col">
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">🌍 Language Usage</div>
+                <div style="padding:16px 0">
+                  <div class="lang-usage-row">
+                    <span class="lang-usage-label">🇬🇧 English</span>
+                    <div class="lang-usage-bar-track"><div class="lang-usage-bar en" id="adm-lang-en-bar" style="width:0%"></div></div>
+                    <span class="lang-usage-pct" id="adm-lang-en-pct">—</span>
+                  </div>
+                  <div class="lang-usage-row">
+                    <span class="lang-usage-label">🇮🇳 Hindi</span>
+                    <div class="lang-usage-bar-track"><div class="lang-usage-bar hi" id="adm-lang-hi-bar" style="width:0%"></div></div>
+                    <span class="lang-usage-pct" id="adm-lang-hi-pct">—</span>
+                  </div>
+                </div>
+                <div class="admin-chart-title" style="margin-top:8px">🥧 Language Share</div>
+                <div class="admin-chart-wrap"><canvas id="adm-chart-lang-pie"></canvas></div>
+              </div>
+              <div class="glass-card admin-chart-card">
+                <div class="admin-chart-title">📈 Language Trend (30 Days)</div>
+                <div class="admin-chart-wrap tall"><canvas id="adm-chart-lang-trend"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /admin-content -->
+      </div><!-- /section-container -->
+    </section>
+  </div><!-- /page-admin -->
+
+  <!-- ══════════════ PLANTS PAGE (Phase 4B) ══════════════ -->
+  <div id="page-plants" class="page-section hidden">
+    <section class="inner-page-section">
+      <div class="section-container">
+
+        <!-- Page Header -->
+        <div class="inner-page-header">
+          <div class="section-tag">Phase 4B · Progress Tracking</div>
+          <h2 class="section-title">🌿 Plant <span class="gradient-text-green">Monitoring</span></h2>
+          <p class="section-sub">Track the same plant over time and visualize disease recovery or progression</p>
+        </div>
+
+        <!-- Login gate -->
+        <div id="plants-login-gate" class="plants-login-gate hidden">
+          <div class="plants-gate-icon">🔒</div>
+          <h3>Login Required</h3>
+          <p>Please login to track and monitor your plants over time.</p>
+          <button class="btn-primary" id="plants-gate-login-btn" style="margin:0 auto">🔑 Login to AgroAI</button>
+        </div>
+
+        <!-- Plants Content -->
+        <div id="plants-content">
+
+          <!-- Analytics KPI Row -->
+          <div class="plants-kpi-grid" id="plants-kpi-grid">
+            <div class="plant-kpi-card">
+              <div class="plant-kpi-icon">🌿</div>
+              <div class="plant-kpi-value" id="pkpi-total">0</div>
+              <div class="plant-kpi-label">Total Tracked</div>
+            </div>
+            <div class="plant-kpi-card">
+              <div class="plant-kpi-icon">📈</div>
+              <div class="plant-kpi-value" id="pkpi-recovery">—</div>
+              <div class="plant-kpi-label">Avg Recovery Rate</div>
+            </div>
+            <div class="plant-kpi-card plant-kpi-red">
+              <div class="plant-kpi-icon">🔴</div>
+              <div class="plant-kpi-value" id="pkpi-high-risk">0</div>
+              <div class="plant-kpi-label">High Risk Plants</div>
+            </div>
+            <div class="plant-kpi-card plant-kpi-green">
+              <div class="plant-kpi-icon">🏆</div>
+              <div class="plant-kpi-value" id="pkpi-most-improved" style="font-size:0.85rem">—</div>
+              <div class="plant-kpi-label">Most Improved</div>
+            </div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="plants-toolbar">
+            <span class="plants-count" id="plants-count">Loading...</span>
+            <button class="btn-add-plant" id="btn-add-plant">➕ Add New Plant</button>
+          </div>
+
+          <!-- Plants Grid -->
+          <div class="plants-grid" id="plants-grid"></div>
+
+          <!-- Empty State -->
+          <div class="empty-state hidden" id="plants-empty">
+            <div class="empty-icon">🌱</div>
+            <h3>No Plants Tracked Yet</h3>
+            <p>Start tracking your first plant after an AI scan to monitor its recovery over time.</p>
+            <button class="btn-primary" id="plants-go-scan-btn">🔬 Scan a Plant First</button>
+          </div>
+
+          <!-- ═══════════════════════════════════════════════════════
+               PLANT DETAIL PANEL (shown when a card is selected)
+          ═══════════════════════════════════════════════════════ -->
+          <div class="plant-detail-panel hidden" id="plant-detail-panel">
+
+            <!-- Detail Header -->
+            <div class="plant-detail-header">
+              <div class="plant-detail-icon">🌿</div>
+              <div class="plant-detail-info">
+                <h3 id="detail-plant-name">Plant Name</h3>
+                <div class="plant-detail-meta">
+                  <span id="detail-total-scans">0 scans</span>
+                  <span class="plant-detail-sep">•</span>
+                  <span id="detail-latest-disease">—</span>
+                  <span class="plant-detail-sep">•</span>
+                  <span id="detail-last-scan">—</span>
+                </div>
+              </div>
+              <button class="plant-detail-close" id="plant-detail-close" title="Close">✕</button>
+            </div>
+
+            <!-- Analytics Strip -->
+            <div class="plant-analytics-strip" id="plant-analytics-strip">
+              <div class="plant-analytics-item">
+                <div class="plant-analytics-value" id="det-avg-conf">—</div>
+                <div class="plant-analytics-label">Avg Confidence</div>
+              </div>
+              <div class="plant-analytics-item">
+                <div class="plant-analytics-value" id="det-avg-risk">—</div>
+                <div class="plant-analytics-label">Avg Risk Score</div>
+              </div>
+              <div class="plant-analytics-item">
+                <div class="plant-analytics-value plant-analytics-green" id="det-recovery">—</div>
+                <div class="plant-analytics-label">Recovery Rate</div>
+              </div>
+              <div class="plant-analytics-item">
+                <div class="plant-analytics-value plant-analytics-red" id="det-high-risk">—</div>
+                <div class="plant-analytics-label">High Risk Scans</div>
+              </div>
+            </div>
+
+            <!-- 4 Chart.js Charts -->
+            <div class="tracking-chart-grid">
+              <div class="tracking-chart-card glass-card">
+                <div class="tracking-chart-title">📊 Disease Confidence Trend</div>
+                <div class="tracking-chart-wrap"><canvas id="chart-confidence-trend"></canvas></div>
+              </div>
+              <div class="tracking-chart-card glass-card">
+                <div class="tracking-chart-title">⚠️ Risk Score Trend</div>
+                <div class="tracking-chart-wrap"><canvas id="chart-risk-trend"></canvas></div>
+              </div>
+              <div class="tracking-chart-card glass-card">
+                <div class="tracking-chart-title">📈 Recovery Trend</div>
+                <div class="tracking-chart-wrap"><canvas id="chart-recovery-trend"></canvas></div>
+              </div>
+              <div class="tracking-chart-card glass-card">
+                <div class="tracking-chart-title">💚 Health Score Trend</div>
+                <div class="tracking-chart-wrap"><canvas id="chart-health-trend"></canvas></div>
+              </div>
+            </div>
+
+            <!-- Scan Timeline -->
+            <div class="scan-timeline-section glass-card">
+              <div class="scan-timeline-title">🕐 Scan History Timeline</div>
+              <div class="scan-timeline" id="scan-timeline"></div>
+            </div>
+
+          </div><!-- /plant-detail-panel -->
+
+        </div><!-- /plants-content -->
+
+      </div><!-- /section-container -->
+    </section>
+  </div><!-- /page-plants -->
+
+  <!-- ══════════ TRACK PLANT MODAL ══════════ -->
+  <div class="track-modal" id="track-modal" role="dialog" aria-modal="true" aria-label="Track Plant">
+    <div class="track-modal-card">
+      <button class="track-modal-close" id="track-modal-close" aria-label="Close">✕</button>
+      <div class="track-modal-logo">🌿</div>
+      <h2 class="track-modal-title">Track This Plant</h2>
+      <p class="track-modal-sub">Choose an existing tracked plant to log this scan, or create a new one.</p>
+
+      <!-- Existing Plants Dropdown -->
+      <div class="track-section" id="track-existing-section">
+        <label class="track-label">Select Existing Plant</label>
+        <select id="track-plant-select" class="track-select">
+          <option value="">— Select a plant —</option>
+        </select>
+        <button class="btn-primary track-confirm-btn" id="track-existing-btn"><span>✅ Log Scan to Selected Plant</span></button>
+      </div>
+
+      <div class="track-or-divider"><span>or</span></div>
+
+      <!-- New Plant Form -->
+      <div class="track-section">
+        <label class="track-label">Create New Tracked Plant</label>
+        <input type="text" id="track-new-plant-name" class="track-input" placeholder="e.g. My Tomato Plant in Backyard" maxlength="80">
+        <button class="btn-primary track-confirm-btn" id="track-create-btn"><span>🌱 Create &amp; Track</span></button>
+      </div>
+
+      <div class="track-error hidden" id="track-error"></div>
     </div>
   </div>
 

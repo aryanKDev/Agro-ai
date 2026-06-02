@@ -2,9 +2,11 @@
 AgroAI — MongoDB Database Connection Manager
 =============================================
 Handles connection to MongoDB Atlas and provides CRUD operations for:
-  - scans       collection (user-scoped + legacy support)
-  - users       collection (SaaS multi-user)
-  - feedbacks   collection (Phase 2B — real feedback system)
+  - scans               collection (user-scoped + legacy support)
+  - users               collection (SaaS multi-user)
+  - feedbacks           collection (Phase 2B — real feedback system)
+  - plant_tracks        collection (Phase 4B — tracked plant records)
+  - tracked_plant_scans collection (Phase 4B — per-plant scan history)
 """
 
 import os
@@ -26,20 +28,25 @@ DB_NAME               = "agroai"
 COLLECTION_NAME       = "scans"
 USERS_COLLECTION      = "users"
 FEEDBACKS_COLLECTION  = "feedbacks"
-CHAT_HISTORY_COLLECTION = "chat_history"  # Phase 3A RAG
+CHAT_HISTORY_COLLECTION    = "chat_history"   # Phase 3A RAG
+PLANT_TRACKS_COLLECTION    = "plant_tracks"   # Phase 4B
+TRACKED_SCANS_COLLECTION   = "tracked_plant_scans"  # Phase 4B
 
-db_client        = None
-db               = None
-scans_col        = None
-users_col        = None
-feedbacks_col    = None
-chat_history_col = None  # Phase 3A RAG
-is_connected     = False
+db_client           = None
+db                  = None
+scans_col           = None
+users_col           = None
+feedbacks_col       = None
+chat_history_col    = None  # Phase 3A RAG
+plant_tracks_col    = None  # Phase 4B
+tracked_scans_col   = None  # Phase 4B
+is_connected        = False
 
 
 def init_db():
     """Initialize MongoDB Atlas Connection."""
-    global db_client, db, scans_col, users_col, feedbacks_col, chat_history_col, is_connected
+    global db_client, db, scans_col, users_col, feedbacks_col, chat_history_col, \
+           plant_tracks_col, tracked_scans_col, is_connected
 
     if not MONGO_URI:
         logger.warning("MONGO_URI not defined in .env. MongoDB features will run in offline simulation mode.")
@@ -50,11 +57,13 @@ def init_db():
         db_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
         db_client.admin.command('ping')
 
-        db               = db_client[DB_NAME]
-        scans_col        = db[COLLECTION_NAME]
-        users_col        = db[USERS_COLLECTION]
-        feedbacks_col    = db[FEEDBACKS_COLLECTION]
-        chat_history_col = db[CHAT_HISTORY_COLLECTION]  # Phase 3A RAG
+        db                = db_client[DB_NAME]
+        scans_col         = db[COLLECTION_NAME]
+        users_col         = db[USERS_COLLECTION]
+        feedbacks_col     = db[FEEDBACKS_COLLECTION]
+        chat_history_col  = db[CHAT_HISTORY_COLLECTION]   # Phase 3A RAG
+        plant_tracks_col  = db[PLANT_TRACKS_COLLECTION]   # Phase 4B
+        tracked_scans_col = db[TRACKED_SCANS_COLLECTION]  # Phase 4B
 
         # Ensure unique email index on users collection
         users_col.create_index([("email", ASCENDING)], unique=True)
@@ -62,6 +71,10 @@ def init_db():
         feedbacks_col.create_index([("userId", ASCENDING)])
         # Index chat_history by userId + timestamp (Phase 3A RAG)
         chat_history_col.create_index([("userId", ASCENDING), ("timestamp", -1)])
+        # Phase 4B — indexes for plant tracking collections
+        plant_tracks_col.create_index([("userId", ASCENDING), ("createdAt", -1)])
+        tracked_scans_col.create_index([("plantId", ASCENDING), ("scanDate", -1)])
+        tracked_scans_col.create_index([("userId",  ASCENDING), ("scanDate", -1)])
 
         is_connected = True
         logger.info("Successfully connected to MongoDB Atlas!")
@@ -70,7 +83,8 @@ def init_db():
     except (ConnectionFailure, ServerSelectionTimeoutError) as e:
         logger.error(f"Failed to connect to MongoDB Atlas: {e}")
         is_connected = False
-        db_client = db = scans_col = users_col = feedbacks_col = chat_history_col = None
+        db_client = db = scans_col = users_col = feedbacks_col = chat_history_col = \
+            plant_tracks_col = tracked_scans_col = None
         return False
     except Exception as e:
         logger.error(f"Unexpected database initialization error: {e}")
@@ -591,6 +605,368 @@ def save_chat_message(
         return None
 
 
+
+# ===========================================================================
+# ADMIN ANALYTICS  (Phase 4A — Admin Intelligence Dashboard)
+# ===========================================================================
+
+def get_admin_overview() -> dict:
+    """
+    Platform-level KPIs for the Admin Overview tab.
+    Returns:
+        totalUsers, activeUsers (last 30d), totalScans, totalFeedback,
+        totalRagQueries, avgScansPerUser
+    """
+    empty = {
+        "totalUsers": 0, "activeUsers": 0, "totalScans": 0,
+        "totalFeedback": 0, "totalRagQueries": 0, "avgScansPerUser": 0,
+    }
+    if not check_connection():
+        return empty
+    try:
+        total_users    = users_col.count_documents({})
+        total_scans    = scans_col.count_documents({})
+        total_feedback = feedbacks_col.count_documents({})
+        total_rag      = chat_history_col.count_documents({})
+
+        # Active users = distinct userId values in scans in last 30 days
+        cutoff = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+        pipeline_active = [
+            {"$match": {"timestamp": {"$gte": cutoff}, "userId": {"$exists": True}}},
+            {"$group": {"_id": "$userId"}},
+            {"$count": "count"},
+        ]
+        r = list(scans_col.aggregate(pipeline_active))
+        active_users = r[0]["count"] if r else 0
+
+        avg_scans = round(total_scans / total_users, 1) if total_users else 0
+
+        return {
+            "totalUsers":     total_users,
+            "activeUsers":    active_users,
+            "totalScans":     total_scans,
+            "totalFeedback":  total_feedback,
+            "totalRagQueries": total_rag,
+            "avgScansPerUser": avg_scans,
+        }
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_overview error: {e}")
+        return empty
+
+
+def get_admin_agriculture() -> dict:
+    """
+    Agriculture intelligence aggregation across all scans.
+    Returns:
+        topDiseases, diseaseDistribution, highRiskCount, avgRiskScore,
+        weatherImpactSummary, mostCommonCropIssues, severityBreakdown
+    """
+    empty = {
+        "topDiseases": [], "diseaseDistribution": [],
+        "highRiskCount": 0, "avgRiskScore": 0,
+        "weatherImpactSummary": {}, "mostCommonCropIssues": [],
+        "severityBreakdown": {"HIGH": 0, "MEDIUM": 0, "LOW": 0},
+    }
+    if not check_connection():
+        return empty
+    try:
+        # Disease frequency (excluding healthy)
+        pipeline_disease = [
+            {"$match": {"isHealthy": {"$ne": True}}},
+            {"$group": {"_id": "$disease", "count": {"$sum": 1}}},
+            {"$sort": {"count": -1}},
+            {"$limit": 15},
+        ]
+        disease_docs = list(scans_col.aggregate(pipeline_disease))
+        top_diseases = [{"disease": d["_id"], "count": d["count"]} for d in disease_docs]
+        disease_distribution = top_diseases[:10]
+
+        # High risk count
+        high_risk = scans_col.count_documents({"riskLevel": "HIGH"})
+
+        # Average risk score
+        pipeline_risk = [
+            {"$match": {"riskScore": {"$exists": True, "$ne": None}}},
+            {"$group": {"_id": None, "avg": {"$avg": "$riskScore"}}},
+        ]
+        r = list(scans_col.aggregate(pipeline_risk))
+        avg_risk = round(r[0]["avg"], 1) if r else 0
+
+        # Severity breakdown
+        sev_pipeline = [
+            {"$group": {"_id": "$severity", "count": {"$sum": 1}}},
+        ]
+        sev_docs = list(scans_col.aggregate(sev_pipeline))
+        sev_breakdown = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+        for s in sev_docs:
+            if s["_id"] in sev_breakdown:
+                sev_breakdown[s["_id"]] = s["count"]
+
+        # Weather impact summary — avg humidity/temp across HIGH risk scans
+        pipeline_weather = [
+            {"$match": {"riskLevel": "HIGH", "weatherSnapshot": {"$exists": True}}},
+            {"$group": {
+                "_id": None,
+                "avgTemp":     {"$avg": "$weatherSnapshot.temperature"},
+                "avgHumidity": {"$avg": "$weatherSnapshot.humidity"},
+                "avgRain":     {"$avg": "$weatherSnapshot.rainChance"},
+                "count":       {"$sum": 1},
+            }},
+        ]
+        w = list(scans_col.aggregate(pipeline_weather))
+        weather_summary = {}
+        if w:
+            weather_summary = {
+                "avgTemp":     round(w[0].get("avgTemp", 0) or 0, 1),
+                "avgHumidity": round(w[0].get("avgHumidity", 0) or 0, 1),
+                "avgRain":     round(w[0].get("avgRain", 0) or 0, 1),
+                "count":       w[0].get("count", 0),
+            }
+
+        # Most common crop issues (extract crop from disease name)
+        crop_issues = {}
+        for d in disease_docs:
+            name = d["_id"] or ""
+            parts = name.split("___")
+            if len(parts) >= 2:
+                crop = parts[0].replace("_", " ").title()
+                crop_issues[crop] = crop_issues.get(crop, 0) + d["count"]
+        sorted_crops = sorted(crop_issues.items(), key=lambda x: x[1], reverse=True)[:8]
+        most_common_crops = [{"crop": c, "count": n} for c, n in sorted_crops]
+
+        return {
+            "topDiseases":           top_diseases,
+            "diseaseDistribution":   disease_distribution,
+            "highRiskCount":         high_risk,
+            "avgRiskScore":          avg_risk,
+            "weatherImpactSummary":  weather_summary,
+            "mostCommonCropIssues":  most_common_crops,
+            "severityBreakdown":     sev_breakdown,
+        }
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_agriculture error: {e}")
+        return empty
+
+
+def _contains_hindi(text: str) -> bool:
+    """Return True if text contains Devanagari Unicode characters (Hindi)."""
+    return any('\u0900' <= ch <= '\u097F' for ch in (text or ""))
+
+
+def get_admin_rag() -> dict:
+    """
+    RAG Analytics: query volumes, top questions, top sources,
+    success rate, fallback rate, chat volume trend (last 30 days).
+    """
+    empty = {
+        "totalRagQueries": 0, "ragSuccessRate": 0, "fallbackRate": 0,
+        "topQuestions": [], "topSources": [], "categoryDistribution": [],
+        "chatVolumeTrend": [],
+    }
+    if not check_connection():
+        return empty
+    try:
+        all_chats = list(
+            chat_history_col.find({}, {"question": 1, "mode": 1, "sources": 1, "timestamp": 1})
+        )
+        total = len(all_chats)
+        if not total:
+            return empty
+
+        rag_count      = sum(1 for c in all_chats if c.get("mode") == "rag")
+        fallback_count = total - rag_count
+        success_rate   = round(rag_count / total * 100, 1) if total else 0
+        fallback_rate  = round(fallback_count / total * 100, 1) if total else 0
+
+        # Top questions (by exact match frequency)
+        q_freq = {}
+        for c in all_chats:
+            q = (c.get("question") or "").strip()
+            if q:
+                q_freq[q] = q_freq.get(q, 0) + 1
+        top_questions = [
+            {"question": q[:120], "count": n}
+            for q, n in sorted(q_freq.items(), key=lambda x: x[1], reverse=True)[:10]
+        ]
+
+        # Top sources and category distribution
+        source_freq   = {}
+        category_freq = {}
+        for c in all_chats:
+            for src in (c.get("sources") or []):
+                doc = src.get("document", "")
+                cat = src.get("category", "General")
+                if doc:
+                    source_freq[doc] = source_freq.get(doc, 0) + 1
+                if cat:
+                    category_freq[cat] = category_freq.get(cat, 0) + 1
+        top_sources = [
+            {"document": k[:60], "count": v}
+            for k, v in sorted(source_freq.items(), key=lambda x: x[1], reverse=True)[:8]
+        ]
+        category_distribution = [
+            {"category": k, "count": v}
+            for k, v in sorted(category_freq.items(), key=lambda x: x[1], reverse=True)[:8]
+        ]
+
+        # Chat volume trend (last 30 days)
+        now = datetime.datetime.utcnow()
+        trend = []
+        for i in range(29, -1, -1):
+            day_dt    = now - datetime.timedelta(days=i)
+            day_label = day_dt.strftime("%d %b")
+            count     = sum(
+                1 for c in all_chats
+                if c.get("timestamp") and c["timestamp"].date() == day_dt.date()
+            )
+            trend.append({"date": day_label, "count": count})
+
+        return {
+            "totalRagQueries":      total,
+            "ragSuccessRate":       success_rate,
+            "fallbackRate":         fallback_rate,
+            "topQuestions":         top_questions,
+            "topSources":           top_sources,
+            "categoryDistribution": category_distribution,
+            "chatVolumeTrend":      trend,
+        }
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_rag error: {e}")
+        return empty
+
+
+def get_admin_feedback() -> dict:
+    """
+    Feedback Analytics: avg rating, count, distribution,
+    latest 10 entries, keyword frequency, trend (last 30 days).
+    """
+    empty = {
+        "avgRating": None, "totalFeedback": 0,
+        "ratingDistribution": {1: 0, 2: 0, 3: 0, 4: 0, 5: 0},
+        "latestFeedback": [], "keywordFrequency": [], "feedbackTrend": [],
+    }
+    if not check_connection():
+        return empty
+    try:
+        all_fb = list(feedbacks_col.find().sort("createdAt", -1))
+        total  = len(all_fb)
+        if not total:
+            return empty
+
+        ratings = [f.get("rating", 0) for f in all_fb]
+        avg     = round(sum(ratings) / total, 2) if ratings else None
+        dist    = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0}
+        for r in ratings:
+            if r in dist:
+                dist[r] += 1
+
+        latest = []
+        for f in all_fb[:10]:
+            latest.append({
+                "name":    f.get("name", "Anonymous"),
+                "rating":  f.get("rating", 0),
+                "message": f.get("message", "")[:200],
+                "date":    f["createdAt"].isoformat() + "Z" if f.get("createdAt") else None,
+            })
+
+        # Keyword frequency — common words in messages (simple tokenizer)
+        STOPWORDS = {
+            "the","a","an","is","it","to","and","or","in","of","for","on","with",
+            "this","that","i","my","me","we","are","was","be","so","very","app",
+            "agroai","good","really","great","works","use","its","at","as","by","not"
+        }
+        word_freq = {}
+        for f in all_fb:
+            msg = (f.get("message") or "").lower()
+            for word in msg.split():
+                word = word.strip(".,!?;:'\"")
+                if len(word) >= 4 and word not in STOPWORDS:
+                    word_freq[word] = word_freq.get(word, 0) + 1
+        keyword_frequency = [
+            {"word": w, "count": c}
+            for w, c in sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:20]
+        ]
+
+        # Feedback trend (last 30 days — count per day)
+        now = datetime.datetime.utcnow()
+        trend = []
+        for i in range(29, -1, -1):
+            day_dt    = now - datetime.timedelta(days=i)
+            day_label = day_dt.strftime("%d %b")
+            count     = sum(
+                1 for f in all_fb
+                if f.get("createdAt") and f["createdAt"].date() == day_dt.date()
+            )
+            trend.append({"date": day_label, "count": count})
+
+        return {
+            "avgRating":           avg,
+            "totalFeedback":       total,
+            "ratingDistribution":  dist,
+            "latestFeedback":      latest,
+            "keywordFrequency":    keyword_frequency,
+            "feedbackTrend":       trend,
+        }
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_feedback error: {e}")
+        return empty
+
+
+def get_admin_languages() -> dict:
+    """
+    Language Analytics derived from chat_history (Hindi Unicode detection).
+    Returns:
+        englishCount, hindiCount, englishPct, hindiPct, mostUsedLanguage,
+        languageTrend (last 30 days)
+    """
+    empty = {
+        "englishCount": 0, "hindiCount": 0,
+        "englishPct": 0, "hindiPct": 0,
+        "mostUsedLanguage": "English", "languageTrend": [],
+    }
+    if not check_connection():
+        return empty
+    try:
+        all_chats = list(
+            chat_history_col.find({}, {"question": 1, "timestamp": 1})
+        )
+        total = len(all_chats)
+        if not total:
+            return empty
+
+        hindi_count   = sum(1 for c in all_chats if _contains_hindi(c.get("question", "")))
+        english_count = total - hindi_count
+        hindi_pct     = round(hindi_count / total * 100, 1) if total else 0
+        english_pct   = round(100 - hindi_pct, 1)
+        most_used     = "Hindi" if hindi_count > english_count else "English"
+
+        # Language trend — last 30 days
+        now = datetime.datetime.utcnow()
+        trend = []
+        for i in range(29, -1, -1):
+            day_dt    = now - datetime.timedelta(days=i)
+            day_label = day_dt.strftime("%d %b")
+            day_chats = [
+                c for c in all_chats
+                if c.get("timestamp") and c["timestamp"].date() == day_dt.date()
+            ]
+            en = sum(1 for c in day_chats if not _contains_hindi(c.get("question", "")))
+            hi = len(day_chats) - en
+            trend.append({"date": day_label, "english": en, "hindi": hi})
+
+        return {
+            "englishCount":    english_count,
+            "hindiCount":      hindi_count,
+            "englishPct":      english_pct,
+            "hindiPct":        hindi_pct,
+            "mostUsedLanguage": most_used,
+            "languageTrend":   trend,
+        }
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_languages error: {e}")
+        return empty
+
+
 def get_chat_history(user_id: str | None, limit: int = 10) -> list:
     """
     Fetch the last `limit` RAG chat messages for a user, newest first.
@@ -629,3 +1005,271 @@ def get_chat_history(user_id: str | None, limit: int = 10) -> list:
     except Exception as e:
         logger.error(f"[chat_history] Failed to fetch history: {e}")
         return []
+
+
+# ===========================================================================
+# PHASE 4B — PLANT PROGRESS TRACKING
+# ===========================================================================
+
+def create_plant_track(user_id: str, plant_name: str) -> str | None:
+    """
+    Create a new tracked plant record for a user.
+
+    Args:
+        user_id   : ObjectId string of the authenticated user
+        plant_name: Human-readable name for the plant (e.g. "My Tomato Plant")
+
+    Returns:
+        Inserted plant _id string, or None on failure.
+    """
+    if not check_connection() or not ObjectId.is_valid(user_id):
+        return None
+    try:
+        doc = {
+            "userId":          ObjectId(user_id),
+            "plantName":       plant_name.strip()[:80],
+            "createdAt":       datetime.datetime.utcnow(),
+            "latestDisease":   None,
+            "latestScanDate":  None,
+            "totalScans":      0,
+        }
+        result = plant_tracks_col.insert_one(doc)
+        logger.info(f"[Phase4B] Plant track created | id={result.inserted_id} | name={plant_name!r}")
+        return str(result.inserted_id)
+    except Exception as e:
+        logger.error(f"[Phase4B] Failed to create plant track: {e}")
+        return None
+
+
+def add_tracked_scan(
+    plant_id: str,
+    user_id:  str,
+    disease:  str,
+    confidence: float,
+    risk_score: int | None,
+    weather_snapshot: dict | None,
+    image_url: str | None,
+) -> str | None:
+    """
+    Append a scan snapshot to tracked_plant_scans and update the parent
+    plant_tracks document with the latest status.
+
+    Returns the inserted scan _id string, or None on failure.
+    """
+    if not check_connection():
+        return None
+    if not ObjectId.is_valid(plant_id) or not ObjectId.is_valid(user_id):
+        return None
+    try:
+        now = datetime.datetime.utcnow()
+        scan_doc = {
+            "plantId":         ObjectId(plant_id),
+            "userId":          ObjectId(user_id),
+            "disease":         disease,
+            "confidence":      float(confidence),
+            "riskScore":       int(risk_score) if risk_score is not None else 0,
+            "weatherSnapshot": weather_snapshot or {},
+            "imageUrl":        image_url or "",
+            "scanDate":        now,
+        }
+        result = tracked_scans_col.insert_one(scan_doc)
+
+        # Update parent track with latest scan metadata
+        plant_tracks_col.update_one(
+            {"_id": ObjectId(plant_id), "userId": ObjectId(user_id)},
+            {
+                "$set": {
+                    "latestDisease":  disease,
+                    "latestScanDate": now,
+                },
+                "$inc": {"totalScans": 1},
+            },
+        )
+        logger.info(f"[Phase4B] Tracked scan added | plant={plant_id} | disease={disease!r}")
+        return str(result.inserted_id)
+    except Exception as e:
+        logger.error(f"[Phase4B] Failed to add tracked scan: {e}")
+        return None
+
+
+def get_user_plants(user_id: str) -> list:
+    """
+    Return all tracked plants for a user, newest first.
+    Each entry includes summary info derived from tracked_plant_scans.
+    """
+    if not check_connection() or not ObjectId.is_valid(user_id):
+        return []
+    try:
+        oid    = ObjectId(user_id)
+        tracks = list(
+            plant_tracks_col.find({"userId": oid}).sort("createdAt", -1).limit(200)
+        )
+        results = []
+        for t in tracks:
+            pid = t["_id"]
+            # Fetch last 2 scans to compute trend
+            recent = list(
+                tracked_scans_col.find({"plantId": pid})
+                                 .sort("scanDate", -1)
+                                 .limit(2)
+            )
+            trend = _compute_trend(recent)
+            results.append({
+                "id":             str(pid),
+                "plantName":      t.get("plantName", "Unknown"),
+                "createdAt":      t["createdAt"].isoformat() + "Z",
+                "latestDisease":  t.get("latestDisease"),
+                "latestScanDate": t["latestScanDate"].isoformat() + "Z" if t.get("latestScanDate") else None,
+                "totalScans":     t.get("totalScans", 0),
+                "trend":          trend,
+                "latestRiskScore": recent[0].get("riskScore", 0) if recent else 0,
+            })
+        return results
+    except Exception as e:
+        logger.error(f"[Phase4B] Failed to fetch user plants: {e}")
+        return []
+
+
+def get_plant_history(plant_id: str, user_id: str) -> dict:
+    """
+    Return the full scan history + analytics for a single tracked plant.
+    Verifies ownership via user_id.
+
+    Returns:
+        {
+          plant: { id, plantName, createdAt, totalScans },
+          scans: [ { scanDate, disease, confidence, riskScore, weatherSnapshot, imageUrl } ],
+          analytics: { avgConfidence, avgRiskScore, recoveryRate, totalScans, highRiskCount }
+        }
+    """
+    empty = {"plant": None, "scans": [], "analytics": {}}
+    if not check_connection():
+        return empty
+    if not ObjectId.is_valid(plant_id) or not ObjectId.is_valid(user_id):
+        return empty
+    try:
+        pid  = ObjectId(plant_id)
+        uid  = ObjectId(user_id)
+        # Verify ownership
+        track = plant_tracks_col.find_one({"_id": pid, "userId": uid})
+        if not track:
+            return empty
+
+        raw_scans = list(
+            tracked_scans_col.find({"plantId": pid, "userId": uid})
+                             .sort("scanDate", 1)  # oldest-first for charting
+                             .limit(500)
+        )
+
+        scans = []
+        for s in raw_scans:
+            scans.append({
+                "id":              str(s["_id"]),
+                "scanDate":        s["scanDate"].isoformat() + "Z",
+                "disease":         s.get("disease", "Unknown"),
+                "confidence":      s.get("confidence", 0),
+                "riskScore":       s.get("riskScore", 0),
+                "healthScore":     max(0, 100 - s.get("riskScore", 0)),
+                "weatherSnapshot": s.get("weatherSnapshot", {}),
+                "imageUrl":        s.get("imageUrl", ""),
+            })
+
+        # Analytics
+        total = len(scans)
+        avg_conf = round(sum(s["confidence"] for s in scans) / total, 1) if total else 0
+        avg_risk = round(sum(s["riskScore"]  for s in scans) / total, 1) if total else 0
+        high_risk_count = sum(1 for s in scans if s["riskScore"] >= 70)
+
+        # Recovery rate: % improvement from first to last scan
+        recovery_rate = 0
+        if total >= 2:
+            first_risk = scans[0]["riskScore"]
+            last_risk  = scans[-1]["riskScore"]
+            if first_risk > 0:
+                recovery_rate = round(max(0, (first_risk - last_risk) / first_risk * 100), 1)
+
+        return {
+            "plant": {
+                "id":        str(track["_id"]),
+                "plantName": track.get("plantName", "Unknown"),
+                "createdAt": track["createdAt"].isoformat() + "Z",
+                "totalScans": track.get("totalScans", total),
+            },
+            "scans": scans,
+            "analytics": {
+                "totalScans":     total,
+                "avgConfidence":  avg_conf,
+                "avgRiskScore":   avg_risk,
+                "highRiskCount":  high_risk_count,
+                "recoveryRate":   recovery_rate,
+            },
+        }
+    except Exception as e:
+        logger.error(f"[Phase4B] Failed to get plant history: {e}")
+        return empty
+
+
+def get_plant_analytics(user_id: str) -> dict:
+    """
+    Aggregate tracking analytics across all of a user's plants.
+
+    Returns:
+        totalTracked, avgRecoveryRate, highRiskPlants, mostImprovedPlant
+    """
+    empty = {"totalTracked": 0, "avgRecoveryRate": 0, "highRiskPlants": 0, "mostImprovedPlant": None}
+    if not check_connection() or not ObjectId.is_valid(user_id):
+        return empty
+    try:
+        uid    = ObjectId(user_id)
+        tracks = list(plant_tracks_col.find({"userId": uid}))
+        total  = len(tracks)
+        if not total:
+            return empty
+
+        recovery_rates = []
+        high_risk      = 0
+        best_plant     = None
+        best_recovery  = -1
+
+        for t in tracks:
+            pid = t["_id"]
+            scans = list(
+                tracked_scans_col.find({"plantId": pid})
+                                 .sort("scanDate", 1)
+                                 .limit(500)
+            )
+            if len(scans) >= 2:
+                first_risk = scans[0].get("riskScore", 0)
+                last_risk  = scans[-1].get("riskScore", 0)
+                rate = round(max(0, (first_risk - last_risk) / max(first_risk, 1) * 100), 1)
+                recovery_rates.append(rate)
+                if rate > best_recovery:
+                    best_recovery = rate
+                    best_plant    = t.get("plantName", "Unknown")
+            if scans and scans[-1].get("riskScore", 0) >= 70:
+                high_risk += 1
+
+        avg_recovery = round(sum(recovery_rates) / len(recovery_rates), 1) if recovery_rates else 0
+
+        return {
+            "totalTracked":     total,
+            "avgRecoveryRate":  avg_recovery,
+            "highRiskPlants":   high_risk,
+            "mostImprovedPlant": best_plant,
+        }
+    except Exception as e:
+        logger.error(f"[Phase4B] Failed to compute plant analytics: {e}")
+        return empty
+
+
+def _compute_trend(recent_scans: list) -> str:
+    """Return 'recovering', 'worsening', or 'stable' based on last 2 scan riskScores."""
+    if len(recent_scans) < 2:
+        return "stable"
+    # recent_scans[0] is the newest, [1] is older
+    delta = recent_scans[1].get("riskScore", 0) - recent_scans[0].get("riskScore", 0)
+    if delta >= 10:
+        return "recovering"
+    if delta <= -10:
+        return "worsening"
+    return "stable"

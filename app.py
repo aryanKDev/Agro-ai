@@ -1003,9 +1003,240 @@ def admin_rebuild_index():
         return jsonify({"error": str(e)}), 500
 
 
+
+
+# ===========================================================================
+# Phase 4A — Admin Intelligence Dashboard Routes
+# ===========================================================================
+
+from functools import wraps
+
+def admin_required(fn):
+    """
+    Decorator: requires a valid JWT where the user's role == 'admin'.
+    Returns 403 for authenticated non-admin users.
+    Uses @jwt_required() internally.
+    """
+    @wraps(fn)
+    @jwt_required()
+    def wrapper(*args, **kwargs):
+        user_id = get_jwt_identity()
+        user    = database.get_user_by_id(user_id)
+        if not user or user.get("role") != "admin":
+            return jsonify({"error": "Admin access required. You do not have permission to view this resource."}), 403
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+@app.route("/api/admin/overview", methods=["GET"])
+@admin_required
+def admin_overview():
+    """
+    GET /api/admin/overview  (admin JWT required)
+    Returns platform KPIs: total users, active users, total scans,
+    total feedback, total RAG queries, avg scans per user.
+    """
+    try:
+        data = database.get_admin_overview()
+        return jsonify({"success": True, **data})
+    except Exception as e:
+        logger.error(f"[Admin] overview error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/agriculture", methods=["GET"])
+@admin_required
+def admin_agriculture():
+    """
+    GET /api/admin/agriculture  (admin JWT required)
+    Returns disease analytics, risk summaries, weather impact,
+    crop issue distribution, severity breakdown.
+    """
+    try:
+        data = database.get_admin_agriculture()
+        return jsonify({"success": True, **data})
+    except Exception as e:
+        logger.error(f"[Admin] agriculture error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/rag", methods=["GET"])
+@admin_required
+def admin_rag():
+    """
+    GET /api/admin/rag  (admin JWT required)
+    Returns RAG analytics: total queries, top questions, top retrieved
+    documents, category distribution, success rate, fallback %, trend.
+    """
+    try:
+        data = database.get_admin_rag()
+        return jsonify({"success": True, **data})
+    except Exception as e:
+        logger.error(f"[Admin] rag error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/feedback", methods=["GET"])
+@admin_required
+def admin_feedback():
+    """
+    GET /api/admin/feedback  (admin JWT required)
+    Returns feedback analytics: avg rating, distribution, latest 10,
+    keyword frequency, 30-day trend.
+    """
+    try:
+        data = database.get_admin_feedback()
+        return jsonify({"success": True, **data})
+    except Exception as e:
+        logger.error(f"[Admin] feedback error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/admin/languages", methods=["GET"])
+@admin_required
+def admin_languages():
+    """
+    GET /api/admin/languages  (admin JWT required)
+    Returns language analytics: EN vs HI usage %, most used language,
+    30-day trend derived from chat_history Devanagari detection.
+    """
+    try:
+        data = database.get_admin_languages()
+        return jsonify({"success": True, **data})
+    except Exception as e:
+        logger.error(f"[Admin] languages error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+# ===========================================================================
+# Phase 4B — Plant Progress Tracking API Routes
+# ===========================================================================
+
+@app.route("/api/plants/track", methods=["POST"])
+@jwt_required()
+def create_plant_track():
+    """
+    POST /api/plants/track  (JWT required)
+    Body: { plantName: str }
+    Returns: { success, plantId, plantName }
+    Creates a new tracked plant record for the authenticated user.
+    """
+    try:
+        user_id = get_jwt_identity()
+        data    = request.get_json() or {}
+        plant_name = (data.get("plantName") or "").strip()
+
+        if not plant_name:
+            return jsonify({"error": "plantName is required"}), 400
+        if len(plant_name) > 80:
+            return jsonify({"error": "plantName must be 80 characters or fewer"}), 400
+
+        plant_id = database.create_plant_track(user_id=user_id, plant_name=plant_name)
+        if not plant_id:
+            return jsonify({"error": "Failed to create plant track. Database may be offline."}), 500
+
+        logger.info(f"[Phase4B] /api/plants/track | user={user_id} | name={plant_name!r}")
+        return jsonify({"success": True, "plantId": plant_id, "plantName": plant_name})
+
+    except Exception as e:
+        logger.error(f"[Phase4B] create_plant_track error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/plants/<plant_id>/scan", methods=["POST"])
+@jwt_required()
+def add_plant_scan(plant_id):
+    """
+    POST /api/plants/<plant_id>/scan  (JWT required)
+    Body: {
+        disease: str, confidence: float, riskScore: int,
+        weatherSnapshot: dict, imageUrl: str
+    }
+    Appends a new scan snapshot to a tracked plant's history.
+    Returns: { success, scanId }
+    """
+    try:
+        user_id = get_jwt_identity()
+        data    = request.get_json() or {}
+
+        disease          = (data.get("disease") or "Unknown").strip()
+        confidence       = float(data.get("confidence", 0))
+        risk_score       = int(data.get("riskScore", 0)) if data.get("riskScore") is not None else 0
+        weather_snapshot = data.get("weatherSnapshot") or {}
+        image_url        = (data.get("imageUrl") or "").strip()
+
+        scan_id = database.add_tracked_scan(
+            plant_id         = plant_id,
+            user_id          = user_id,
+            disease          = disease,
+            confidence       = confidence,
+            risk_score       = risk_score,
+            weather_snapshot = weather_snapshot,
+            image_url        = image_url,
+        )
+
+        if not scan_id:
+            return jsonify({"error": "Failed to save scan. Plant not found or DB offline."}), 404
+
+        logger.info(f"[Phase4B] /api/plants/{plant_id}/scan | user={user_id} | disease={disease!r}")
+        return jsonify({"success": True, "scanId": scan_id})
+
+    except Exception as e:
+        logger.error(f"[Phase4B] add_plant_scan error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/plants", methods=["GET"])
+@jwt_required()
+def get_plants():
+    """
+    GET /api/plants  (JWT required)
+    Returns all tracked plants for the authenticated user, including
+    latest disease, scan count, trend, and aggregate analytics.
+    """
+    try:
+        user_id  = get_jwt_identity()
+        plants   = database.get_user_plants(user_id)
+        analytics = database.get_plant_analytics(user_id)
+        logger.info(f"[Phase4B] /api/plants | user={user_id} | count={len(plants)}")
+        return jsonify({"success": True, "plants": plants, "analytics": analytics})
+
+    except Exception as e:
+        logger.error(f"[Phase4B] get_plants error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/plants/<plant_id>/history", methods=["GET"])
+@jwt_required()
+def get_plant_history(plant_id):
+    """
+    GET /api/plants/<plant_id>/history  (JWT required)
+    Returns the full scan history + chart-ready analytics for a single plant.
+    Verifies ownership — 404 if plant does not belong to the requesting user.
+    """
+    try:
+        user_id = get_jwt_identity()
+        result  = database.get_plant_history(plant_id=plant_id, user_id=user_id)
+        if not result.get("plant"):
+            return jsonify({"error": "Plant not found or access denied"}), 404
+        logger.info(f"[Phase4B] /api/plants/{plant_id}/history | user={user_id} | scans={len(result['scans'])}")
+        return jsonify({"success": True, **result})
+
+    except Exception as e:
+        logger.error(f"[Phase4B] get_plant_history error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 # ===========================================================================
 # Start server
 # ===========================================================================
+# if __name__ == "__main__":
+#     logger.info("Plant Disease API starting on http://127.0.0.1:5000")
+#     app.run(debug=True, port=5000)
+
 if __name__ == "__main__":
-    logger.info("Plant Disease API starting on http://127.0.0.1:5000")
-    app.run(debug=True, port=5000)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=True
+    )

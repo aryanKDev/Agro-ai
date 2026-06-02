@@ -2,14 +2,14 @@
 
 > **AI-Powered Agricultural Intelligence Platform**
 
-[![Version](https://img.shields.io/badge/version-2.0.0-brightgreen)](https://github.com)
+[![Version](https://img.shields.io/badge/version-2.1.0-brightgreen)](https://github.com)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://python.org)
 [![Flask](https://img.shields.io/badge/flask-3.x-black)](https://flask.palletsprojects.com)
 [![TensorFlow](https://img.shields.io/badge/tensorflow-2.x-orange)](https://tensorflow.org)
 [![MongoDB](https://img.shields.io/badge/mongodb-atlas-green)](https://cloud.mongodb.com)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-AgroAI is a production-grade, full-stack agricultural intelligence platform designed to empower farmers, agronomists, and researchers with real-time disease detection, weather-informed risk analysis, and an AI-powered expert assistant grounded in verified agricultural knowledge.
+AgroAI is a production-grade, full-stack agricultural intelligence platform designed to empower farmers, agronomists, and researchers with real-time disease detection, weather-informed risk analysis, longitudinal plant monitoring, and an AI-powered expert assistant grounded in verified agricultural knowledge.
 
 ---
 
@@ -34,6 +34,82 @@ AgroAI is a production-grade, full-stack agricultural intelligence platform desi
 | **RAG** | Agriculture Knowledge Base (7 domains) | ✅ |
 | **RAG** | Source Citations from Knowledge Base | ✅ |
 | **Reports** | Premium PDF Report Generation | ✅ |
+| **Admin** | Admin Intelligence Dashboard | ✅ |
+| **Tracking** | 🆕 Plant Disease Progress Tracking | ✅ |
+| **Tracking** | 🆕 Longitudinal Scan History (per plant) | ✅ |
+| **Tracking** | 🆕 Recovery & Risk Trend Visualization | ✅ |
+| **Tracking** | 🆕 Plant Monitoring Analytics Dashboard | ✅ |
+
+---
+
+## 🌿 Phase 4B — Disease Progress Tracking
+
+> **New in v2.1.0** — Track the same plant over time and visualize its disease recovery or progression.
+
+### Overview
+
+Instead of treating every scan as isolated, AgroAI now lets users **create tracked plants**, log multiple scans over time, and visualize:
+
+- **Disease Confidence** — how confident the AI is across scans
+- **Risk Score History** — is the plant getting better or worse?
+- **Recovery Trend** — computed as `100 - riskScore` over time
+- **Health Score** — color-coded composite health indicator
+
+### Features
+
+- **🌿 Track This Plant** — Button appears after every AI prediction to immediately log the scan to a tracked plant
+- **Plant Cards** — Visual dashboard of all tracked plants with latest disease, scan count, and trend badge (Recovering / Worsening / Stable)
+- **Recovery Dashboard** — 4 Chart.js charts per plant (Confidence, Risk, Recovery, Health Score)
+- **Scan Timeline** — Chronological history of all scans with disease label, confidence, risk, and image
+- **Add New Plant** — Create a tracked plant directly from the Plants page
+- **Plant Analytics KPIs** — Total tracked, average recovery rate, high-risk plants, most improved plant
+
+### Architecture
+
+```
+Plant Image Scan (AI Prediction)
+          ↓
+  "Track This Plant" Modal
+          ↓
+  Select Existing Plant  OR  Create New Tracked Plant
+          ↓
+  POST /api/plants/track        POST /api/plants/<id>/scan
+          ↓                              ↓
+  plant_tracks collection     tracked_plant_scans collection
+          ↓
+  MongoDB Atlas (user-scoped)
+          ↓
+  GET /api/plants/<id>/history
+          ↓
+  Recovery Analytics + 4 Trend Charts
+          ↓
+  Chart.js Visualization (Confidence / Risk / Recovery / Health Score)
+```
+
+### MongoDB Collections
+
+| Collection | Purpose |
+|---|---|
+| `plant_tracks` | One document per tracked plant (name, userId, createdAt, summary) |
+| `tracked_plant_scans` | One document per scan snapshot (disease, confidence, riskScore, weather, imageUrl, scanDate) |
+
+### API Endpoints (Phase 4B)
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/plants/track` | Create a new tracked plant | JWT Required |
+| `POST` | `/api/plants/<id>/scan` | Log a scan to a tracked plant | JWT Required |
+| `GET` | `/api/plants` | List all plants + analytics | JWT Required |
+| `GET` | `/api/plants/<id>/history` | Full history + trend charts data | JWT Required |
+
+### Screenshots
+
+| View | Preview |
+|---|---|
+| 🌿 **Plant Monitoring Dashboard** | *(screenshot placeholder)* |
+| 🔁 **Track This Plant Modal** | *(screenshot placeholder)* |
+| 📈 **Recovery Analytics (4 Charts)** | *(screenshot placeholder)* |
+| 🕐 **Scan Timeline** | *(screenshot placeholder)* |
 
 ---
 
@@ -55,6 +131,8 @@ Risk Prediction   →  Rule-Based Risk Engine
 MongoDB Storage   →  Atlas Cloud Database
         ↓
 Dashboard Analytics  →  User KPIs & Trends
+        ↓
+Plant Monitoring  →  Progress Tracking & Recovery Trends
 ```
 
 ### RAG Agriculture Expert Pipeline
@@ -83,12 +161,13 @@ Grounded Answer + Source Citations
 | HTML5 | Structure & Semantic Markup |
 | CSS3 (Vanilla) | Styling, Animations, Glassmorphism |
 | JavaScript (ES6+) | Dynamic UI, Fetch API, i18n Engine |
+| Chart.js | Analytics Charts & Trend Visualization |
 
 ### Backend
 | Technology | Purpose |
 |---|---|
 | Flask 3.x | Web Framework & REST API |
-| MongoDB Atlas | Cloud Database (Scans, Users, Feedback, Chat History) |
+| MongoDB Atlas | Cloud Database (Scans, Users, Feedback, Plant Tracks) |
 | Flask-JWT-Extended | Multi-User Authentication & Authorization |
 | TensorFlow 2.x + Keras | Plant Disease Classification Model |
 | Google Gemini 1.5 Flash | AI Chatbot & RAG Answer Generation |
@@ -123,23 +202,15 @@ cd agroai
 ### 2. Create a Virtual Environment & Install Dependencies
 
 ```bash
-# Create virtual environment
 python -m venv venv
-
-# Activate (Windows)
-venv\Scripts\activate
-
-# Activate (Linux / macOS)
-source venv/bin/activate
-
-# Install all dependencies
+venv\Scripts\activate       # Windows
+source venv/bin/activate    # Linux / macOS
 pip install -r requirements.txt
 ```
 
 ### 3. Configure Environment Variables
 
 ```bash
-# Copy the template
 cp .env.example .env
 ```
 
@@ -150,11 +221,6 @@ Edit `.env` with your real credentials (see [Environment Variables](#-environmen
 ```bash
 python ingest.py
 ```
-
-This will:
-- Read all documents from `knowledge_base/` (7 domain categories)
-- Chunk and embed them using `all-MiniLM-L6-v2`
-- Build and save the FAISS vector index to `vectorstore/`
 
 > ⏱️ First run takes ~2–3 minutes to download the embedding model.
 
@@ -172,30 +238,22 @@ The server will start at **http://127.0.0.1:5000**
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the project root with the following keys:
-
 ```env
 # ── Google Gemini AI ─────────────────────────────────────────
-# Powers the chatbot and RAG expert assistant
-# Get your key: https://aistudio.google.com/app/apikey
 GOOGLE_API_KEY=your_google_gemini_api_key_here
 
 # ── MongoDB Atlas ─────────────────────────────────────────────
-# Cloud database for users, scans, feedback, and chat history
 MONGO_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/agroai?retryWrites=true&w=majority
 
 # ── JWT Authentication ────────────────────────────────────────
-# Strong secret key — minimum 32 characters, change in production
 JWT_SECRET_KEY=change_this_to_a_strong_random_secret_min_32_chars
 JWT_ACCESS_TOKEN_EXPIRES=86400
 
 # ── OpenWeatherMap (optional) ─────────────────────────────────
-# Real-time weather data. Falls back to simulated data if not set.
-# Get your key: https://openweathermap.org/api
 OPENWEATHER_API_KEY=your_openweathermap_api_key_here
 ```
 
-> ⚠️ **Never commit your `.env` file.** It is already git-ignored. Only commit `.env.example`.
+> ⚠️ **Never commit your `.env` file.** It is already git-ignored.
 
 ---
 
@@ -204,14 +262,12 @@ OPENWEATHER_API_KEY=your_openweathermap_api_key_here
 ```
 agroai/
 ├── app.py                          # Main Flask application & all API routes
-├── database.py                     # MongoDB operations (scans, users, feedback, chat)
+├── database.py                     # MongoDB operations (scans, users, plant tracks)
 ├── risk_engine.py                  # Disease spread risk calculation engine
 ├── pdf_generator.py                # Premium PDF report generation (ReportLab)
 ├── ingest.py                       # RAG knowledge base ingestion & FAISS indexing
 ├── requirements.txt                # Python dependencies
-├── runtime.txt                     # Python runtime version (for deployment)
 ├── .env.example                    # Environment variables template
-├── .gitignore                      # Git ignore rules (includes .env)
 │
 ├── auth/                           # JWT Authentication module
 │   ├── auth_routes.py              #   /api/auth/register, /login, /me, /profile
@@ -220,7 +276,7 @@ agroai/
 ├── services/                       # Business logic services
 │   ├── weather_service.py          #   OpenWeatherMap API integration
 │   ├── farming_insights.py         #   AI-generated farming tips from weather
-│   └── rag_service.py              #   FAISS + Gemini RAG pipeline (Phase 3A)
+│   └── rag_service.py              #   FAISS + Gemini RAG pipeline
 │
 ├── knowledge_base/                 # Agriculture domain documents (7 categories)
 │   ├── crops/                      #   Crop cultivation guides
@@ -235,12 +291,12 @@ agroai/
 │   ├── index.faiss                 #   FAISS binary index
 │   └── index.pkl                   #   LangChain metadata & docstore
 │
-├── translations/                   # Multi-language support (Phase 2A)
+├── translations/                   # Multi-language support
 │   ├── en.json                     #   English UI strings
 │   └── hi.json                     #   Hindi (हिंदी) UI strings
 │
 ├── index.html                      # Single-page frontend (SPA)
-├── script.js                       # Frontend JS (auth, scans, RAG, i18n, dashboard)
+├── script.js                       # Frontend JS (auth, scans, RAG, i18n, PlantTracker)
 ├── style.css                       # Styling (glassmorphism, animations, dark UI)
 ├── auth.js                         # Frontend authentication module
 │
@@ -295,6 +351,14 @@ agroai/
 | `GET` | `/api/rag-chat/history` | Get RAG chat history | Optional JWT |
 | `POST` | `/api/admin/rebuild-index` | Hot-rebuild FAISS index | JWT Required |
 
+### 🌿 Plant Progress Tracking (Phase 4B)
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/plants/track` | Create a new tracked plant | JWT Required |
+| `POST` | `/api/plants/<id>/scan` | Log a scan snapshot to a plant | JWT Required |
+| `GET` | `/api/plants` | List all plants + analytics KPIs | JWT Required |
+| `GET` | `/api/plants/<id>/history` | Full history + chart data for a plant | JWT Required |
+
 ### Reports & Chat
 | Method | Endpoint | Description | Auth |
 |---|---|---|---|
@@ -315,17 +379,21 @@ agroai/
 | 📊 **Analytics Dashboard** | *(screenshot placeholder)* |
 | 💬 **Feedback Panel** | *(screenshot placeholder)* |
 | 🤖 **RAG Expert Assistant** | *(screenshot placeholder)* |
+| 🛡️ **Admin Intelligence Dashboard** | *(screenshot placeholder)* |
+| 🌿 **Plant Monitoring Dashboard** | *(screenshot placeholder)* |
+| 🔁 **Track This Plant Modal** | *(screenshot placeholder)* |
+| 📈 **Recovery Analytics** | *(screenshot placeholder)* |
 
 ---
 
 ## 🔒 Security
 
 - **`.env` is git-ignored** — credentials never enter version control
-- **`.env.example` only** contains placeholder values and is safe to commit
 - **JWT tokens** expire after 24 hours (configurable via `JWT_ACCESS_TOKEN_EXPIRES`)
 - **Password hashing** via `bcrypt` — plain-text passwords never stored
-- **User isolation** — MongoDB queries are scoped to authenticated `user_id`
-- **Input validation** on all feedback, auth, and RAG endpoints
+- **User isolation** — all MongoDB queries scoped to authenticated `user_id`
+- **Plant data isolation** — `plant_tracks` and `tracked_plant_scans` are strictly user-scoped
+- **Input validation** on all endpoints
 
 ---
 
@@ -352,6 +420,24 @@ The personalized dashboard provides:
 
 ---
 
+## 🌿 Plant Monitoring Dashboard
+
+The Plant Monitoring page provides cross-plant analytics:
+
+- **Total Tracked Plants** — number of plants under longitudinal monitoring
+- **Average Recovery Rate** — mean `100 - avgRiskScore` across all plants
+- **High Risk Plants** — count of plants with latest risk score ≥ 70
+- **Most Improved Plant** — plant with the largest risk score drop over time
+
+Per-plant recovery dashboard includes:
+
+- 📊 **Disease Confidence Trend** — Line chart of AI confidence over scans
+- ⚠️ **Risk Score Trend** — Line chart of disease risk over time
+- 📈 **Recovery Trend** — Line chart of `100 - riskScore` (higher = healthier)
+- 💚 **Health Score Trend** — Color-coded bar chart (green/amber/red by health)
+
+---
+
 ## 🤖 RAG Knowledge Base
 
 The agriculture knowledge base spans **7 expert domains**:
@@ -366,19 +452,28 @@ The agriculture knowledge base spans **7 expert domains**:
 | 🐛 Pesticides | Safe usage, dosages, integrated pest management |
 | ⛅ Weather | Seasonal farming advice, climate adaptation |
 
-Documents are chunked, embedded with `all-MiniLM-L6-v2`, and stored in FAISS for sub-second semantic retrieval.
-
 ---
 
 ## 🚢 Release History
 
-### v2.0.0 — RAG Agriculture Expert Release *(Current)*
+### v2.1.0 — Plant Monitoring & Disease Progress Tracking *(Current)*
+- ✅ Phase 4B: Longitudinal Plant Disease Progress Tracking
+- ✅ `plant_tracks` & `tracked_plant_scans` MongoDB collections
+- ✅ 4 JWT-protected plant tracking API endpoints
+- ✅ "Track This Plant" button in AI prediction result
+- ✅ Track Plant modal (log to existing or create new)
+- ✅ Plant Monitoring page with KPI cards
+- ✅ Recovery dashboard with 4 Chart.js trend charts
+- ✅ Scan timeline with disease labels, confidence, and risk pills
+- ✅ Cross-plant analytics (avg recovery rate, high-risk count, most improved)
+
+### v2.0.0 — RAG Agriculture Expert & Admin Dashboard
+- ✅ Phase 4A: Admin Intelligence Dashboard (role-based)
 - ✅ Phase 3A: RAG Agriculture Expert Assistant
 - ✅ FAISS Vector Search with semantic retrieval
 - ✅ 7-domain Agriculture Knowledge Base
 - ✅ Chat History persisted to MongoDB
 - ✅ Source Citations from knowledge documents
-- ✅ Admin hot-rebuild FAISS index endpoint
 - ✅ Phase 2A: Multi-Language Support (EN / हिंदी)
 - ✅ Phase 2B: MongoDB Feedback System
 - ✅ Phase 2C: Enhanced Analytics Dashboard

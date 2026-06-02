@@ -106,6 +106,7 @@
     var authLinks   = document.getElementById('nav-auth-links');
     var welcomePill = document.getElementById('nav-welcome-pill');
     var navCta      = document.getElementById('nav-cta');
+    var adminBadge  = document.getElementById('btn-nav-admin');
 
     if (isLoggedIn() && _user) {
       if (guestLinks)  guestLinks.classList.add('hidden');
@@ -115,11 +116,20 @@
         welcomePill.classList.remove('hidden');
       }
       if (navCta) navCta.classList.add('hidden');
+      // Show Admin badge only for admin role
+      if (adminBadge) {
+        if (_user.role === 'admin') {
+          adminBadge.classList.remove('hidden');
+        } else {
+          adminBadge.classList.add('hidden');
+        }
+      }
     } else {
       if (guestLinks)  guestLinks.classList.remove('hidden');
       if (authLinks)   authLinks.classList.add('hidden');
       if (welcomePill) welcomePill.classList.add('hidden');
       if (navCta)      navCta.classList.remove('hidden');
+      if (adminBadge)  adminBadge.classList.add('hidden');
     }
   }
 
