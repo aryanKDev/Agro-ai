@@ -948,3 +948,106 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 @media(max-width:640px){.plants-kpi-grid{grid-template-columns:repeat(2,1fr)}.plants-grid{grid-template-columns:1fr}.tracking-chart-grid{grid-template-columns:1fr}.plant-analytics-strip{grid-template-columns:repeat(2,1fr)}.plant-card-stats{flex-direction:column}}
 
 
+/* ══════════════════════════════════════════════════════════
+   PHASE 4C — ADMIN USER MANAGEMENT DASHBOARD
+══════════════════════════════════════════════════════════ */
+
+/* ── Users KPI Strip ── */
+.admin-users-kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-bottom:24px}
+.admin-users-kpi{background:var(--admin-card);border:1px solid var(--admin-border);border-radius:var(--radius);padding:20px 16px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
+.admin-users-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--admin),var(--admin2))}
+.admin-users-kpi:hover{border-color:rgba(245,158,11,.5);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.3),0 0 24px var(--admin-glow)}
+.admin-users-kpi-icon{font-size:1.5rem;margin-bottom:8px}
+.admin-users-kpi-value{font-family:'Outfit',sans-serif;font-size:1.8rem;font-weight:900;color:var(--admin2);line-height:1;margin-bottom:5px}
+.admin-users-kpi-label{color:var(--text2);font-size:.72rem;font-weight:500}
+
+/* ── Users Toolbar ── */
+.admin-users-toolbar{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:20px;flex-wrap:wrap}
+.admin-users-search-wrap{flex:1;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:0 14px;transition:border-color .3s;min-width:220px}
+.admin-users-search-wrap:focus-within{border-color:var(--admin);box-shadow:0 0 0 3px rgba(245,158,11,.1)}
+.admin-users-search-icon{color:var(--text2);font-size:1rem;flex-shrink:0}
+.admin-users-search{flex:1;padding:11px 0;background:none;border:none;color:var(--text);font-size:.9rem;outline:none;font-family:'Inter',sans-serif}
+.admin-users-search::placeholder{color:var(--text2)}
+.admin-users-sort-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.admin-users-sort-label{color:var(--text2);font-size:.8rem;font-weight:600;white-space:nowrap}
+.admin-users-sort{padding:9px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;outline:none;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .3s}
+.admin-users-sort:focus{border-color:var(--admin)}
+.admin-users-sort option{background:#0f0f1a;color:var(--text)}
+.admin-users-count{color:var(--text2);font-size:.82rem;font-weight:500;flex-shrink:0;white-space:nowrap}
+
+/* ── Users Table ── */
+.admin-users-table-wrap{overflow-x:auto;margin-top:8px}
+.admin-users-table{min-width:820px}
+.admin-user-name-cell{display:flex;align-items:center;gap:10px}
+.admin-user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--admin),var(--admin2));color:#000;font-size:.75rem;font-weight:900;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.admin-user-name{font-weight:600;color:#fff;font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.admin-user-email{color:var(--text2);font-size:.82rem;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-user-date{color:var(--text2);font-size:.8rem;white-space:nowrap}
+
+/* Role badge */
+.admin-role-badge{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:capitalize;letter-spacing:.3px;white-space:nowrap}
+.admin-role-badge.role-admin{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4);color:var(--admin2)}
+.admin-role-badge.role-user{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:var(--p2)}
+
+/* Status pill */
+.admin-status-pill{display:inline-flex;align-items:center;gap:4px;font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:capitalize;letter-spacing:.3px;white-space:nowrap}
+.admin-status-pill.status-active{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);color:var(--g2)}
+.admin-status-pill.status-inactive{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171}
+
+/* Count badge variants */
+.admin-count-badge.plants{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.35);color:var(--g2)}
+.admin-count-badge.rag{background:rgba(59,130,246,.13);border-color:rgba(59,130,246,.35);color:#93c5fd}
+
+/* Clickable row */
+.admin-user-row{cursor:pointer}
+.admin-user-row:hover td{background:rgba(245,158,11,.07)!important}
+
+/* Loading / empty */
+.admin-users-loading{text-align:center;color:var(--text2);font-size:.88rem;padding:32px 0!important}
+.admin-users-empty{text-align:center;padding:48px 24px;display:none}
+.admin-users-empty:not(.hidden){display:block}
+.admin-users-empty-icon{font-size:3rem;margin-bottom:12px}
+.admin-users-empty p{color:var(--text2);font-size:.88rem}
+
+/* ── User Detail Modal ── */
+.user-detail-modal{position:fixed;inset:0;z-index:9999;background:rgba(5,5,10,.78);backdrop-filter:blur(18px);display:none;align-items:center;justify-content:center;padding:20px}
+.user-detail-modal.open{display:flex;animation:fadeIn .22s ease}
+.user-detail-modal-card{background:linear-gradient(145deg,rgba(20,18,40,.98),rgba(13,13,26,.99));border:1px solid rgba(245,158,11,.28);border-radius:26px;padding:36px;width:100%;max-width:520px;position:relative;box-shadow:0 32px 80px rgba(0,0,0,.65),0 0 60px rgba(245,158,11,.1);animation:modalSlideUp .38s cubic-bezier(.34,1.56,.64,1);max-height:90vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--admin) transparent}
+.user-detail-modal-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--admin),var(--admin2),var(--p2));border-radius:26px 26px 0 0}
+.user-detail-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text2);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.user-detail-close:hover{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.35);color:#f87171}
+.user-detail-header{display:flex;align-items:flex-start;gap:16px;margin-bottom:28px}
+.user-detail-avatar{width:60px;height:60px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--admin),var(--admin2));color:#000;font-size:1.6rem;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px var(--admin-glow)}
+.user-detail-info{flex:1;min-width:0}
+.user-detail-name{font-family:'Outfit',sans-serif;font-size:1.35rem;font-weight:800;color:#fff;margin-bottom:4px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-detail-email{color:var(--text2);font-size:.85rem;margin-bottom:8px;word-break:break-all}
+.user-detail-role-badge{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px;text-transform:capitalize}
+.user-detail-role-badge.role-admin{background:rgba(245,158,11,.18);border:1px solid rgba(245,158,11,.4);color:var(--admin2)}
+.user-detail-role-badge.role-user{background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.3);color:var(--p2)}
+.user-detail-status-pill{flex-shrink:0;font-size:.72rem;font-weight:700;padding:5px 14px;border-radius:20px;white-space:nowrap;margin-left:auto;align-self:flex-start}
+.user-detail-status-pill.status-active{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.35);color:var(--g2)}
+.user-detail-status-pill.status-inactive{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.user-detail-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.user-detail-stat{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;transition:all .25s}
+.user-detail-stat:hover{border-color:var(--admin-border);transform:translateY(-2px)}
+.user-detail-stat-icon{font-size:1.4rem;margin-bottom:8px}
+.user-detail-stat-value{font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:900;color:var(--admin2);line-height:1;margin-bottom:5px}
+.user-detail-stat-label{color:var(--text2);font-size:.68rem;font-weight:500}
+.user-detail-meta-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px}
+.user-detail-meta-item{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+.user-detail-meta-label{color:var(--text2);font-size:.74rem;font-weight:600}
+.user-detail-meta-value{color:#fff;font-size:.9rem;font-weight:600}
+.user-detail-section-title{font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700;color:#fff;margin-bottom:14px}
+.udm-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.udm-bar-label{color:var(--text2);font-size:.8rem;font-weight:500;width:130px;flex-shrink:0}
+.udm-bar-track{flex:1;height:8px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+.udm-bar-fill{height:100%;border-radius:10px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.udm-bar-val{color:var(--text2);font-size:.8rem;font-weight:600;width:30px;text-align:right;flex-shrink:0}
+
+/* ── Users Responsive ── */
+@media(max-width:1200px){.admin-users-kpi-strip{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.admin-users-kpi-strip{grid-template-columns:repeat(3,1fr)}.user-detail-stats-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){.admin-users-kpi-strip{grid-template-columns:repeat(2,1fr)}.admin-users-toolbar{flex-direction:column;align-items:stretch}.admin-users-search-wrap{min-width:unset}.user-detail-stats-grid{grid-template-columns:repeat(2,1fr)}.user-detail-meta-row{grid-template-columns:1fr}.user-detail-header{flex-wrap:wrap}.udm-bar-label{width:100px;font-size:.72rem}}
+
+
+

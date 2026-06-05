@@ -1455,6 +1455,7 @@ const AdminDashboard = (() => {
       rag:         '/api/admin/rag',
       feedback:    '/api/admin/feedback',
       languages:   '/api/admin/languages',
+      users:       '/api/admin/users',   // Phase 4C — User Management
     };
     const url = endpointMap[tab];
     if (!url) return;
@@ -1470,14 +1471,236 @@ const AdminDashboard = (() => {
       if (tab === 'rag')         _renderRAG(data);
       if (tab === 'feedback')    _renderFeedback(data);
       if (tab === 'languages')   _renderLanguages(data);
+      if (tab === 'users')       _renderUsers(data);   // Phase 4C
     } catch (e) {
       console.error('[AdminDashboard] loadTab error:', tab, e);
       if (window.Toast) Toast.show('Admin data load failed: ' + e.message, 'error');
     }
   }
 
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Phase 4C — USERS TAB
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // Holds the raw user list for client-side search/sort
+  let _allUsers = [];
+
+  /**
+   * _renderUsers(data)
+   * Entry point called when /api/admin/users returns successfully.
+   * Populates KPI strip, renders table, wires search + sort.
+   */
+  function _renderUsers(data) {
+    _allUsers = data.users || [];
+    const users = _allUsers;
+
+    // ── KPI Strip ────────────────────────────────────────────────────────
+    const total    = users.length;
+    const active   = users.filter(u => u.status === 'active').length;
+    const inactive = total - active;
+    const admins   = users.filter(u => u.role === 'admin').length;
+    const totalScans = users.reduce((s, u) => s + (u.totalScans || 0), 0);
+    const totalRag   = users.reduce((s, u) => s + (u.ragQueries || 0), 0);
+
+    _setEl('adm-users-total',       total);
+    _setEl('adm-users-active',      active);
+    _setEl('adm-users-inactive',    inactive);
+    _setEl('adm-users-admins',      admins);
+    _setEl('adm-users-total-scans', totalScans);
+    _setEl('adm-users-total-rag',   totalRag);
+
+    // ── Initial table render (no filter, newest sort) ─────────────────────
+    _buildUsersTable(users);
+
+    // ── Wire search box (live filter) ─────────────────────────────────────
+    const searchEl = document.getElementById('adm-users-search');
+    const sortEl   = document.getElementById('adm-users-sort');
+
+    function _refresh() {
+      const q    = (searchEl?.value || '').toLowerCase().trim();
+      const sort = sortEl?.value || 'newest';
+
+      // Filter
+      let filtered = q
+        ? _allUsers.filter(u =>
+            (u.name  || '').toLowerCase().includes(q) ||
+            (u.email || '').toLowerCase().includes(q)
+          )
+        : [..._allUsers];
+
+      // Sort
+      if (sort === 'scans')  filtered.sort((a, b) => (b.totalScans  || 0) - (a.totalScans  || 0));
+      if (sort === 'rag')    filtered.sort((a, b) => (b.ragQueries  || 0) - (a.ragQueries  || 0));
+      if (sort === 'plants') filtered.sort((a, b) => (b.trackedPlants || 0) - (a.trackedPlants || 0));
+      // 'newest' keeps default server order (already sorted by createdAt desc)
+
+      _buildUsersTable(filtered);
+    }
+
+    // Debounce search input for smooth typing
+    let _searchTimer;
+    if (searchEl) {
+      searchEl.oninput = () => {
+        clearTimeout(_searchTimer);
+        _searchTimer = setTimeout(_refresh, 200);
+      };
+    }
+    if (sortEl) {
+      sortEl.onchange = _refresh;
+    }
+
+    // ── Wire user detail modal close ─────────────────────────────────────
+    const closeBtn = document.getElementById('user-detail-close');
+    const modal    = document.getElementById('user-detail-modal');
+    if (closeBtn && modal) {
+      closeBtn.onclick = () => modal.classList.remove('open');
+      modal.addEventListener('click', e => {
+        if (e.target === modal) modal.classList.remove('open');
+      });
+    }
+  }
+
+  /**
+   * _buildUsersTable(users)
+   * Renders rows into #adm-users-tbody.
+   * Each row is clickable → opens _openUserModal().
+   */
+  function _buildUsersTable(users) {
+    const tbody  = document.getElementById('adm-users-tbody');
+    const empty  = document.getElementById('adm-users-empty');
+    const countEl = document.getElementById('adm-users-count');
+
+    if (!tbody) return;
+
+    if (countEl) countEl.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+
+    if (!users.length) {
+      tbody.innerHTML = '';
+      empty?.classList.remove('hidden');
+      return;
+    }
+    empty?.classList.add('hidden');
+
+    const fmt = iso => {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' });
+    };
+
+    tbody.innerHTML = users.map((u, i) => {
+      // Role badge
+      const roleCls  = u.role === 'admin' ? 'role-admin' : 'role-user';
+      const roleIcon = u.role === 'admin' ? '⚙️' : '👤';
+      // Status pill
+      const statusCls  = u.status === 'active' ? 'status-active' : 'status-inactive';
+      const statusIcon = u.status === 'active' ? '🟢' : '🔴';
+
+      return `<tr class="admin-user-row" data-uid="${u._id}" title="Click to view full profile">
+        <td class="rank-num">${i + 1}</td>
+        <td>
+          <div class="admin-user-name-cell">
+            <span class="admin-user-avatar">${(u.name || '?').charAt(0).toUpperCase()}</span>
+            <span class="admin-user-name">${u.name || 'Unknown'}</span>
+          </div>
+        </td>
+        <td class="admin-user-email">${u.email || '—'}</td>
+        <td><span class="admin-role-badge ${roleCls}">${roleIcon} ${u.role || 'user'}</span></td>
+        <td><span class="admin-count-badge">${u.totalScans || 0}</span></td>
+        <td><span class="admin-count-badge plants">${u.trackedPlants || 0}</span></td>
+        <td><span class="admin-count-badge rag">${u.ragQueries || 0}</span></td>
+        <td class="admin-user-date">${fmt(u.createdAt)}</td>
+        <td><span class="admin-status-pill ${statusCls}">${statusIcon} ${u.status || 'inactive'}</span></td>
+      </tr>`;
+    }).join('');
+
+    // Wire row clicks to modal
+    tbody.querySelectorAll('.admin-user-row').forEach((row, i) => {
+      row.addEventListener('click', () => _openUserModal(users[i]));
+    });
+  }
+
+  /**
+   * _openUserModal(user)
+   * Populates and opens the glassmorphism user-detail modal.
+   */
+  function _openUserModal(user) {
+    if (!user) return;
+    const modal = document.getElementById('user-detail-modal');
+    if (!modal) return;
+
+    const fmt = iso => {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('en-IN', {
+        day: 'numeric', month: 'long', year: 'numeric'
+      });
+    };
+
+    // Header
+    const avatarEl = document.getElementById('udm-avatar');
+    if (avatarEl) avatarEl.textContent = (user.name || '?').charAt(0).toUpperCase();
+
+    _setEl('udm-name',  user.name  || 'Unknown');
+    _setEl('udm-email', user.email || '—');
+
+    // Role badge
+    const roleEl = document.getElementById('udm-role-badge');
+    if (roleEl) {
+      roleEl.textContent = user.role === 'admin' ? '⚙️ Admin' : '👤 User';
+      roleEl.className   = 'user-detail-role-badge ' + (user.role === 'admin' ? 'role-admin' : 'role-user');
+    }
+
+    // Status pill
+    const statusEl = document.getElementById('udm-status-pill');
+    if (statusEl) {
+      statusEl.textContent = user.status === 'active' ? '🟢 Active' : '🔴 Inactive';
+      statusEl.className   = 'user-detail-status-pill ' + (user.status === 'active' ? 'status-active' : 'status-inactive');
+    }
+
+    // Stats
+    _setEl('udm-scans',    user.totalScans    ?? 0);
+    _setEl('udm-plants',   user.trackedPlants ?? 0);
+    _setEl('udm-feedback', user.feedbackCount ?? 0);
+    _setEl('udm-rag',      user.ragQueries    ?? 0);
+
+    // Meta
+    _setEl('udm-joined',        fmt(user.createdAt));
+    _setEl('udm-last-activity', fmt(user.lastActivity));
+
+    // Activity summary bars
+    const barsEl = document.getElementById('udm-activity-bars');
+    if (barsEl) {
+      const maxVal = Math.max(
+        user.totalScans    || 0,
+        user.trackedPlants || 0,
+        user.feedbackCount || 0,
+        user.ragQueries    || 0,
+        1  // prevent divide-by-zero
+      );
+      const bars = [
+        { label: '🔬 Scans',         value: user.totalScans    || 0, color: '#f59e0b' },
+        { label: '🌿 Tracked Plants', value: user.trackedPlants || 0, color: '#10b981' },
+        { label: '⭐ Feedback',       value: user.feedbackCount || 0, color: '#a78bfa' },
+        { label: '🤖 RAG Queries',    value: user.ragQueries    || 0, color: '#60a5fa' },
+      ];
+      barsEl.innerHTML = bars.map(b => {
+        const pct = Math.round((b.value / maxVal) * 100);
+        return `<div class="udm-bar-row">
+          <span class="udm-bar-label">${b.label}</span>
+          <div class="udm-bar-track">
+            <div class="udm-bar-fill" style="width:${pct}%;background:${b.color}"></div>
+          </div>
+          <span class="udm-bar-val">${b.value}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Open modal
+    modal.classList.add('open');
+  }
+
   // ── Show/hide access denied ────────────────────────────────────────
   function _showAccessDenied() {
+
     const denied  = document.getElementById('admin-access-denied');
     const content = document.getElementById('admin-content');
     if (denied)  denied.classList.remove('hidden');

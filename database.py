@@ -967,7 +967,122 @@ def get_admin_languages() -> dict:
         return empty
 
 
+
+# ===========================================================================
+# ADMIN USER MANAGEMENT  (Phase 4C — Admin User Management Dashboard)
+# ===========================================================================
+
+def get_admin_users() -> list:
+    """
+    Return all registered users with aggregated platform usage statistics.
+
+    For each user, computes:
+        - totalScans       : count of docs in 'scans' collection for that user
+        - trackedPlants    : count of docs in 'plant_tracks' collection
+        - feedbackCount    : count of docs in 'feedbacks' collection
+        - ragQueries       : count of docs in 'chat_history' collection
+        - lastActivity     : latest timestamp across scans / chat / feedback
+        - status           : 'active' if lastActivity within 7 days, else 'inactive'
+
+    SECURITY: Sensitive fields (password, passwordHash, tokens) are NEVER returned.
+
+    Returns:
+        List of user dicts sorted by createdAt descending (newest first).
+        Returns [] if database is offline.
+    """
+    if not check_connection():
+        logger.warning("[Admin] get_admin_users: database offline")
+        return []
+    try:
+        now = datetime.datetime.utcnow()
+        active_cutoff = now - datetime.timedelta(days=7)
+
+        # Fetch all users — exclude every sensitive field explicitly
+        raw_users = list(
+            users_col.find(
+                {},
+                {
+                    # Exclude all password/token fields — MongoDB projection
+                    "password":     0,
+                    "passwordHash": 0,
+                    "token":        0,
+                    "refreshToken": 0,
+                    "resetToken":   0,
+                    "secret":       0,
+                }
+            ).sort("createdAt", -1)
+        )
+
+        result = []
+        for u in raw_users:
+            uid = u["_id"]
+
+            # ── Per-user counts (each is a fast indexed count) ──────────────
+            total_scans = scans_col.count_documents({"userId": uid})
+            tracked_plants = plant_tracks_col.count_documents({"userId": uid})
+            feedback_count = feedbacks_col.count_documents({"userId": uid})
+            rag_queries = chat_history_col.count_documents({"userId": uid})
+
+            # ── Last activity: latest timestamp across three collections ─────
+            last_ts = None
+
+            # Latest scan timestamp
+            last_scan = scans_col.find_one(
+                {"userId": uid}, {"timestamp": 1}, sort=[("timestamp", -1)]
+            )
+            if last_scan and last_scan.get("timestamp"):
+                ts = last_scan["timestamp"]
+                if last_ts is None or ts > last_ts:
+                    last_ts = ts
+
+            # Latest chat_history timestamp
+            last_chat = chat_history_col.find_one(
+                {"userId": uid}, {"timestamp": 1}, sort=[("timestamp", -1)]
+            )
+            if last_chat and last_chat.get("timestamp"):
+                ts = last_chat["timestamp"]
+                if last_ts is None or ts > last_ts:
+                    last_ts = ts
+
+            # Latest feedback timestamp
+            last_fb = feedbacks_col.find_one(
+                {"userId": uid}, {"createdAt": 1}, sort=[("createdAt", -1)]
+            )
+            if last_fb and last_fb.get("createdAt"):
+                ts = last_fb["createdAt"]
+                if last_ts is None or ts > last_ts:
+                    last_ts = ts
+
+            # ── Status: active if last activity ≤ 7 days ────────────────────
+            status = "inactive"
+            if last_ts and last_ts >= active_cutoff:
+                status = "active"
+
+            # ── Build the safe output dict (NO sensitive fields) ─────────────
+            result.append({
+                "_id":          str(uid),
+                "name":         u.get("name", "Unknown"),
+                "email":        u.get("email", ""),
+                "role":         u.get("role", "user"),
+                "createdAt":    u["createdAt"].isoformat() + "Z" if u.get("createdAt") else None,
+                "totalScans":   total_scans,
+                "trackedPlants": tracked_plants,
+                "feedbackCount": feedback_count,
+                "ragQueries":   rag_queries,
+                "lastActivity": last_ts.isoformat() + "Z" if last_ts else None,
+                "status":       status,
+            })
+
+        logger.info(f"[Admin] get_admin_users: returned {len(result)} users")
+        return result
+
+    except Exception as e:
+        logger.error(f"[Admin] get_admin_users error: {e}")
+        return []
+
+
 def get_chat_history(user_id: str | None, limit: int = 10) -> list:
+
     """
     Fetch the last `limit` RAG chat messages for a user, newest first.
 

@@ -1014,18 +1014,60 @@ from functools import wraps
 def admin_required(fn):
     """
     Decorator: requires a valid JWT where the user's role == 'admin'.
-    Returns 403 for authenticated non-admin users.
-    Uses @jwt_required() internally.
+
+    FIX (Flask-JWT-Extended v4+):
+        Do NOT stack @jwt_required() on the inner `wrapper` — that registers
+        all admin endpoints under the same name 'wrapper', causing Flask's
+        view-function registry to collide and the first registered route to
+        shadow all others (manifests as 401 / 405 on later-registered routes).
+
+        Correct pattern: call verify_jwt_in_request() inside the function body.
     """
     @wraps(fn)
-    @jwt_required()
     def wrapper(*args, **kwargs):
-        user_id = get_jwt_identity()
+        from flask import request as _req
+        from flask_jwt_extended import verify_jwt_in_request, get_jwt, get_jwt_identity
+
+        # ── Verify JWT (raises exception → flask-jwt returns 401 if invalid) ─
+        try:
+            verify_jwt_in_request()
+        except Exception as jwt_err:
+            logger.error(f"[ADMIN] JWT verification failed for {_req.path}: {jwt_err}")
+            return jsonify({"error": "Invalid or expired token. Please log in again."}), 401
+
+        # ── [ADMIN DEBUG] Full auth trace ─────────────────────────────────
+        auth_header = _req.headers.get("Authorization", "<missing>")
+        decoded_jwt = get_jwt()            # full decoded payload dict
+        user_id     = get_jwt_identity()   # the 'sub' claim (user_id_str)
+
+        logger.warning(
+            "\n"
+            "=" * 60 + "\n"
+            "[ADMIN DEBUG] Incoming admin request\n"
+            f"  Endpoint         : {_req.path}\n"
+            f"  Authorization    : {auth_header[:60]}...\n"
+            f"  Decoded JWT sub  : {user_id!r}\n"
+            f"  Full JWT payload : {decoded_jwt}\n"
+        )
+
+        # ── DB lookup ────────────────────────────────────────────────────
         user    = database.get_user_by_id(user_id)
+        db_role = user.get("role") if user else "<user not found in DB>"
+        allowed = bool(user and user.get("role") == "admin")
+
+        logger.warning(
+            f"  DB user found    : {bool(user)}\n"
+            f"  DB role          : {db_role!r}\n"
+            f"  Admin allowed    : {allowed}\n"
+            "=" * 60
+        )
+        # ── End debug ──────────────────────────────────────────────────────
+
         if not user or user.get("role") != "admin":
             return jsonify({"error": "Admin access required. You do not have permission to view this resource."}), 403
         return fn(*args, **kwargs)
     return wrapper
+
 
 
 @app.route("/api/admin/overview", methods=["GET"])
@@ -1106,6 +1148,34 @@ def admin_languages():
     except Exception as e:
         logger.error(f"[Admin] languages error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Phase 4C — Admin User Management
+# ---------------------------------------------------------------------------
+
+@app.route("/api/admin/users", methods=["GET"])
+@admin_required
+def admin_users():
+    """
+    GET /api/admin/users  (admin JWT required)
+    Returns all registered users enriched with platform usage statistics.
+
+    Each user entry contains:
+        _id, name, email, role, createdAt,
+        totalScans, trackedPlants, feedbackCount, ragQueries,
+        lastActivity, status (active/inactive)
+
+    SECURITY: Passwords and tokens are NEVER returned (excluded in database layer).
+    """
+    try:
+        users = database.get_admin_users()
+        return jsonify({"success": True, "users": users, "total": len(users)})
+    except Exception as e:
+        logger.error(f"[Admin] users error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 
 
 # ===========================================================================

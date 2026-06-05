@@ -697,7 +697,7 @@
             <div class="admin-hero-icon">⚙️</div>
             <div class="admin-hero-content">
               <h1>Admin Intelligence Dashboard <span class="admin-hero-badge">🔴 LIVE</span></h1>
-              <p>Platform analytics, agriculture intelligence, RAG metrics, feedback insights, and language trends — all in one place.</p>
+              <p>Platform analytics, agriculture intelligence, RAG metrics, feedback insights, language trends, and full user management — all in one place.</p>
             </div>
           </div>
 
@@ -708,6 +708,7 @@
             <button class="admin-tab-btn" data-tab="rag" id="admin-tab-rag">🤖 RAG Analytics</button>
             <button class="admin-tab-btn" data-tab="feedback" id="admin-tab-feedback">⭐ Feedback</button>
             <button class="admin-tab-btn" data-tab="languages" id="admin-tab-languages">🌐 Languages</button>
+            <button class="admin-tab-btn" data-tab="users" id="admin-tab-users">👥 Users</button>
           </div>
 
           <!-- ═══════════ TAB: OVERVIEW ═══════════ -->
@@ -850,10 +851,162 @@
             </div>
           </div>
 
+          <!-- ═══════════ TAB: USERS (Phase 4C) ═══════════ -->
+          <div class="admin-tab-content" id="admin-panel-users">
+
+            <!-- Users KPI Strip -->
+            <div class="admin-users-kpi-strip" id="admin-users-kpi-strip">
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">👥</div>
+                <div class="admin-users-kpi-value" id="adm-users-total">—</div>
+                <div class="admin-users-kpi-label">Total Users</div>
+              </div>
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">🟢</div>
+                <div class="admin-users-kpi-value" id="adm-users-active">—</div>
+                <div class="admin-users-kpi-label">Active (7d)</div>
+              </div>
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">🔴</div>
+                <div class="admin-users-kpi-value" id="adm-users-inactive">—</div>
+                <div class="admin-users-kpi-label">Inactive</div>
+              </div>
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">⚙️</div>
+                <div class="admin-users-kpi-value" id="adm-users-admins">—</div>
+                <div class="admin-users-kpi-label">Admins</div>
+              </div>
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">🔬</div>
+                <div class="admin-users-kpi-value" id="adm-users-total-scans">—</div>
+                <div class="admin-users-kpi-label">Total Scans</div>
+              </div>
+              <div class="admin-users-kpi">
+                <div class="admin-users-kpi-icon">🤖</div>
+                <div class="admin-users-kpi-value" id="adm-users-total-rag">—</div>
+                <div class="admin-users-kpi-label">Total RAG Queries</div>
+              </div>
+            </div>
+
+            <!-- Search + Sort Toolbar -->
+            <div class="admin-users-toolbar glass-card">
+              <div class="admin-users-search-wrap">
+                <span class="admin-users-search-icon">🔍</span>
+                <input
+                  type="text"
+                  id="adm-users-search"
+                  class="admin-users-search"
+                  placeholder="Search by name or email…"
+                  autocomplete="off"
+                >
+              </div>
+              <div class="admin-users-sort-wrap">
+                <label class="admin-users-sort-label">Sort by</label>
+                <select id="adm-users-sort" class="admin-users-sort">
+                  <option value="newest">Newest Users</option>
+                  <option value="scans">Most Scans</option>
+                  <option value="rag">Most RAG Usage</option>
+                  <option value="plants">Most Plants Tracked</option>
+                </select>
+              </div>
+              <div class="admin-users-count" id="adm-users-count">Loading…</div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="glass-card admin-table-card" id="admin-users-table-card">
+              <div class="admin-chart-title">👥 Registered Users</div>
+              <div class="admin-users-table-wrap">
+                <table class="admin-table admin-users-table" id="adm-users-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Scans</th>
+                      <th>Plants</th>
+                      <th>RAG</th>
+                      <th>Joined</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adm-users-tbody">
+                    <tr><td colspan="9" class="admin-users-loading">⏳ Loading users…</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="admin-users-empty hidden" id="adm-users-empty">
+                <div class="admin-users-empty-icon">👥</div>
+                <p>No users found matching your search.</p>
+              </div>
+            </div>
+
+          </div><!-- /admin-panel-users -->
+
         </div><!-- /admin-content -->
       </div><!-- /section-container -->
     </section>
   </div><!-- /page-admin -->
+
+  <!-- ══════════ USER DETAIL MODAL (Phase 4C) ══════════ -->
+  <div class="user-detail-modal" id="user-detail-modal" role="dialog" aria-modal="true" aria-label="User Profile">
+    <div class="user-detail-modal-card">
+      <button class="user-detail-close" id="user-detail-close" aria-label="Close">✕</button>
+
+      <!-- Header -->
+      <div class="user-detail-header">
+        <div class="user-detail-avatar" id="udm-avatar">👤</div>
+        <div class="user-detail-info">
+          <div class="user-detail-name" id="udm-name">—</div>
+          <div class="user-detail-email" id="udm-email">—</div>
+          <span class="user-detail-role-badge" id="udm-role-badge">user</span>
+        </div>
+        <span class="user-detail-status-pill" id="udm-status-pill">—</span>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="user-detail-stats-grid">
+        <div class="user-detail-stat">
+          <div class="user-detail-stat-icon">🔬</div>
+          <div class="user-detail-stat-value" id="udm-scans">0</div>
+          <div class="user-detail-stat-label">Total Scans</div>
+        </div>
+        <div class="user-detail-stat">
+          <div class="user-detail-stat-icon">🌿</div>
+          <div class="user-detail-stat-value" id="udm-plants">0</div>
+          <div class="user-detail-stat-label">Tracked Plants</div>
+        </div>
+        <div class="user-detail-stat">
+          <div class="user-detail-stat-icon">⭐</div>
+          <div class="user-detail-stat-value" id="udm-feedback">0</div>
+          <div class="user-detail-stat-label">Feedback Submitted</div>
+        </div>
+        <div class="user-detail-stat">
+          <div class="user-detail-stat-icon">🤖</div>
+          <div class="user-detail-stat-value" id="udm-rag">0</div>
+          <div class="user-detail-stat-label">RAG Queries</div>
+        </div>
+      </div>
+
+      <!-- Meta Row -->
+      <div class="user-detail-meta-row">
+        <div class="user-detail-meta-item">
+          <span class="user-detail-meta-label">📅 Join Date</span>
+          <span class="user-detail-meta-value" id="udm-joined">—</span>
+        </div>
+        <div class="user-detail-meta-item">
+          <span class="user-detail-meta-label">🕐 Last Activity</span>
+          <span class="user-detail-meta-value" id="udm-last-activity">—</span>
+        </div>
+      </div>
+
+      <!-- Activity Summary -->
+      <div class="user-detail-activity-section">
+        <div class="user-detail-section-title">📊 Activity Summary</div>
+        <div class="user-detail-activity-bars" id="udm-activity-bars"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- ══════════════ PLANTS PAGE (Phase 4B) ══════════════ -->
   <div id="page-plants" class="page-section hidden">
