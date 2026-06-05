@@ -32,6 +32,9 @@ EMBED_MODEL     = "all-MiniLM-L6-v2"
 RELEVANCE_THRESHOLD = 1.2
 TOP_K = 5
 
+# Working Gemini model (confirmed via API probe — gemini-1.5-flash was deprecated)
+GEMINI_MODEL = "gemini-2.5-flash"
+
 
 class RAGService:
     """
@@ -82,7 +85,19 @@ class RAGService:
                 allow_dangerous_deserialization=True,
             )
             self._ready = True
-            logger.info(f"[RAG] FAISS vectorstore loaded from: {VECTORSTORE_DIR}")
+            chunk_count = self._vectorstore.index.ntotal if hasattr(self._vectorstore, 'index') else '?'
+            logger.info(
+                f"[RAG] FAISS vectorstore loaded from: {VECTORSTORE_DIR} | "
+                f"Chunks indexed: {chunk_count}"
+            )
+            # ── CHECK 1: RAG Service Health ──────────────────────────────────
+            logger.info(
+                f"\n[RAG DEBUG] Service health check:\n"
+                f"  Ready       : {self._ready}\n"
+                f"  Vectorstore : {type(self._vectorstore).__name__}\n"
+                f"  Chunk Count : {chunk_count}\n"
+                f"  Model       : {GEMINI_MODEL}"
+            )
         except Exception as e:
             logger.error(f"[RAG] Failed to load vectorstore: {e}")
             self._ready = False
@@ -123,14 +138,23 @@ class RAGService:
                 raw = self._vectorstore.similarity_search_with_score(question, k=TOP_K)
                 # Filter by relevance threshold (L2 distance)
                 chunks = [(doc, score) for doc, score in raw if score < RELEVANCE_THRESHOLD]
+                # ── CHECK 2: Vector Search debug ─────────────────────────────────
+                all_scores = [round(float(s), 4) for _, s in raw]
                 logger.info(
-                    f"[RAG] Vector search: {len(raw)} hits, {len(chunks)} relevant "
-                    f"(threshold L2<{RELEVANCE_THRESHOLD})"
+                    f"\n[RAG DEBUG] Vector search for: {question[:60]!r}\n"
+                    f"  Raw Hits         : {len(raw)}\n"
+                    f"  Relevant Chunks  : {len(chunks)}\n"
+                    f"  All Scores (L2)  : {all_scores}\n"
+                    f"  Threshold (L2<)  : {RELEVANCE_THRESHOLD}"
                 )
             except Exception as e:
                 logger.error(f"[RAG] Vector search failed: {e}")
 
         # ── Step 2: Choose RAG or Fallback ────────────────────────────────
+        # ── CHECK 5: Mode selection ───────────────────────────────────────
+        selected_mode = "rag" if chunks else "fallback"
+        logger.info(f"[RAG DEBUG] Selected Mode: {selected_mode}")
+
         if chunks:
             return self._rag_answer(question, chunks, language)
         else:
@@ -230,7 +254,10 @@ class RAGService:
     # ── Gemini Call ─────────────────────────────────────────────────────────
 
     def _call_gemini(self, system_prompt: str, user_message: str, retries: int = 1) -> str:
-        """Call Gemini 1.5 Flash with retry on quota/server errors."""
+        """
+        Call Gemini (model: gemini-2.5-flash) with retry on quota/server errors.
+        gemini-1.5-flash was deprecated and removed from the API in 2025.
+        """
         try:
             import google.generativeai as genai
         except ImportError:
@@ -240,9 +267,16 @@ class RAGService:
         if not api_key:
             return "GOOGLE_API_KEY not configured. Please set it in your .env file."
 
+        # ── CHECK 3: Gemini call info ─────────────────────────────────────
+        logger.info(
+            f"\n[RAG DEBUG] Gemini call\n"
+            f"  API key detected : True ({api_key[:8]}...)\n"
+            f"  Model name       : {GEMINI_MODEL}"
+        )
+
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name=GEMINI_MODEL,   # ← was 'gemini-1.5-flash' (DEAD)
             system_instruction=system_prompt,
             generation_config=genai.types.GenerationConfig(
                 max_output_tokens=1024,
@@ -257,6 +291,7 @@ class RAGService:
                 text = getattr(response, "text", None)
                 if not text:
                     raise ValueError("Empty response from Gemini")
+                logger.info(f"[RAG] Gemini responded successfully ({len(text)} chars)")
                 return text.strip()
             except Exception as e:
                 last_err = e
@@ -271,10 +306,17 @@ class RAGService:
                 else:
                     break
 
-        logger.error(f"[RAG] Gemini call failed after {retries+1} attempts: {last_err}")
+        # ── Surface the EXACT exception so it's visible in logs ──────────
+        logger.error(
+            f"\n[RAG DEBUG] Gemini call FAILED after {retries+1} attempt(s)\n"
+            f"  Exception type : {type(last_err).__name__}\n"
+            f"  Exception text : {last_err}"
+        )
+        # Return the actual error message so it's visible in the UI during debugging
         return (
-            "I'm unable to reach the AI service right now. "
-            "Please try again in a moment."
+            f"I'm unable to reach the AI service right now. "
+            f"Please try again in a moment. "
+            f"[DEBUG: {type(last_err).__name__}: {str(last_err)[:120]}]"
         )
 
 

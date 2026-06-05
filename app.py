@@ -58,7 +58,8 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.warning("GOOGLE_API_KEY not set in .env – chatbot will run in offline mode only.")
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash"   # gemini-1.5-flash deprecated; gemini-2.5-flash confirmed working
+
 
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
